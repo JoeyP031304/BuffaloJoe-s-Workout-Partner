@@ -33,7 +33,7 @@ The app has an illustrated version of this under More → Health → "Prefer to 
 
 Tip: if a new action lands below End Repeat instead of inside the loop, press-and-hold it and drag it up between Repeat and End Repeat.
 
-Run it once: Allow **Steps** when iOS asks. Nothing shows on screen; the text is on the clipboard. Open Ironlog → Paste from clipboard → Allow Paste.
+Run it once: Allow **Steps** when iOS asks, and tap **Always Allow** when it asks to copy the health samples to the clipboard (shared shortcuts get this extra privacy prompt). Nothing shows on screen; the text is on the clipboard. Open Ironlog → Paste from clipboard → Allow Paste.
 
 ## Make it automatic
 
