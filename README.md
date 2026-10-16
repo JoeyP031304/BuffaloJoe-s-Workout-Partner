@@ -39,8 +39,17 @@ A personal strength and fitness tracker that runs entirely in your browser. No a
 - Android: Samsung Health → Settings → Download personal data; pick the emailed zip (or a CSV from it) in the app. Steps, Galaxy Watch workouts, calories and heart rate come in. The zip is unpacked on the phone; nothing is uploaded anywhere.
 - Re-running a sync skips anything already imported. Ironlog also accepts data appended to its address as `?import=` (URL-encoded text), which opens in Safari.
 
+**Privacy, legal and support**
+- No accounts, no server, no cookies, no analytics, no ads, no payments. All data stays on the device; **More → Your data & privacy** exports it (JSON/CSV) or deletes all of it.
+- Privacy & cookie policy, terms of use & refund policy, and support & accessibility statement are inside the app (More) and as pages: `privacy.html`, `terms.html`, `support.html`.
+- **More → Report a problem** prepares a report (version and device type only) to post as a GitHub issue or copy.
+- A first-open notice explains where data lives. The health connection is offered to adults only (date-of-birth gate).
+
+**Accessibility**
+- Screen-reader and keyboard support: landmarks, labelled controls, list rows reachable with Tab and activated with Enter/Space, dialogs with focus management and Escape to close, charts with text descriptions, status messages announced, visible focus rings, text contrast ≥ 4.5:1 in light and dark mode, pinch-zoom allowed, reduced-motion respected. Audited with axe-core (0 violations across 36 screens).
+
 **Everything else**
-- Dark mode, lb/kg (mi/km) labels, backup export/import (JSON), CSV export. All data stays on the device.
+- Dark mode, lb/kg (mi/km) labels, backup export/import (JSON), CSV export.
 
 ## Files
 
@@ -50,11 +59,13 @@ A personal strength and fitness tracker that runs entirely in your browser. No a
 | `manifest.json` | Lets Android/Chrome install it as an app |
 | `icon.png`, `icon-192.png` | Home-screen icons |
 | `SHORTCUT.md` | What the iPhone shortcut does and how to rebuild it (the app has the illustrated guide) |
+| `privacy.html`, `terms.html`, `support.html` | Privacy & cookie policy, terms & refund policy, support & accessibility (same text as inside the app) |
+| `barlow-*.woff2`, `FONT-LICENSE.txt` | Self-hosted Barlow fonts (SIL Open Font License); no third-party font requests |
 
 ## Host your own copy on GitHub Pages (free)
 
 1. Sign in to github.com → **New repository**, Public → **Create repository**.
-2. On the empty-repo page click **uploading an existing file**, add the files above → **Commit changes**.
+2. On the empty-repo page click **uploading an existing file**, add all the files above → **Commit changes**.
 3. **Settings → Pages** → Source: *Deploy from a branch*, Branch: `main`, folder `/ (root)` → **Save**.
 4. After a minute the site is live at `https://<your-username>.github.io/<repo-name>/`.
 
@@ -69,4 +80,4 @@ Export a backup (More → Backup) now and then; import it on a new phone to rest
 
 ## Versions
 
-Each release is saved in `backups/` on the maintainer's machine. Current: **v13**.
+Each release is saved in `backups/` on the maintainer's machine. Current: **v14**.

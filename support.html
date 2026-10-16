@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support &amp; accessibility — Ironlog</title>
+<meta name="description" content="Support &amp; accessibility for the Ironlog fitness app.">
+<link rel="icon" href="icon.png">
+<style>
+@font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;src:url(barlow-400.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:600;font-display:swap;src:url(barlow-600.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url(barlow-condensed-700.woff2) format("woff2")}
+:root{--mat:#EDEFF2;--paper:#fff;--ink:#1C2230;--ink-2:#5B6472;--line:#D5DAE2;--blue-text:#2149E6;--focus:#2E5BFF}
+@media (prefers-color-scheme:dark){:root{--mat:#15181E;--paper:#1F242D;--ink:#EEF0F3;--ink-2:#9AA3B2;--line:#323A47;--blue-text:#8AA4FF;--focus:#8AA4FF}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--mat);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.5}
+main{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px}
+h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:36px;margin:0 0 4px;line-height:1.05}
+h2{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:22px;margin:22px 0 4px}
+p{margin:8px 0}ul{margin:8px 0;padding-left:20px}li{margin:6px 0}
+a{color:var(--blue-text)}a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.muted{color:var(--ink-2)}.small{font-size:15px}
+nav.top{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;font-weight:600}
+.skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:var(--mat);padding:8px 12px;border-radius:8px}.skip:focus{left:8px}
+footer{margin-top:24px;font-size:14px;color:var(--ink-2);text-align:center}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<main>
+<nav class="top" aria-label="Ironlog pages"><a href="./">← Back to Ironlog</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="support.html" aria-current="page">Support</a></nav>
+<div class="card" id="content">
+<h1>Support &amp; accessibility</h1>
+<p class="small muted">Ironlog — a free personal fitness tracker. <a href="https://joeyp031304.github.io/BuffaloJoe-s-Workout-Partner/">https://joeyp031304.github.io/BuffaloJoe-s-Workout-Partner/</a></p>
+
+<h2>Get help or report a problem</h2>
+<p>Use <strong>More → Report a problem</strong> in the app. It prepares a short report (app version, device type — no personal data) that you can post as a GitHub issue or copy and send another way. You can also go straight to <a href="https://github.com/JoeyP031304/BuffaloJoe-s-Workout-Partner/issues" target="_blank" rel="noopener">https://github.com/JoeyP031304/BuffaloJoe-s-Workout-Partner/issues</a>. A free GitHub account is needed to post there.</p>
+<h2>Delete your data</h2>
+<p>More → Your data &amp; privacy → <strong>Delete all my data</strong> removes everything Ironlog stored on your device. We keep no copy, so that is the complete deletion. If you have any concern that we hold data about you, open an issue and we will respond.</p>
+<h2>Accessibility statement</h2>
+<p>We want Ironlog to be usable by everyone, including people who use a screen reader (VoiceOver, TalkBack), keyboard navigation, large text or reduced motion. The app uses standard HTML controls with text labels, visible focus indicators, text contrast meeting WCAG 2.1 AA (4.5:1), charts and images with text descriptions, dialogs that can be closed with Escape, and respects your system's dark mode, text size and reduced-motion settings. Pinch-to-zoom is not disabled.</p>
+<p>Known limitations: the barcode camera scanner is visual by nature (you can type the barcode instead), and the guided-circuit timer relies on colour plus the on-screen countdown and a beep. If you hit a barrier, please report it — accessibility problems are treated as bugs.</p>
+<h2>Health sync help</h2>
+<p>iPhone: install the shortcut from More → Health, run it, then tap Paste from clipboard. Android: Samsung Health → Settings → Download personal data, then open the zip in More → Health. Full details: <a href="https://github.com/JoeyP031304/BuffaloJoe-s-Workout-Partner/blob/main/SHORTCUT.md" target="_blank" rel="noopener">SHORTCUT.md</a>.</p>
+<h2>Publisher</h2>
+<p>Ironlog is a free, non-commercial project by Joseph Pracitto, Florida, United States. Source and issue tracker: <a href="https://github.com/JoeyP031304/BuffaloJoe-s-Workout-Partner" target="_blank" rel="noopener">https://github.com/JoeyP031304/BuffaloJoe-s-Workout-Partner</a>.</p>
+</div>
+<footer>© 2026 Joseph Pracitto · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="support.html">Support</a> · <a href="https://github.com/JoeyP031304/BuffaloJoe-s-Workout-Partner">Source</a></footer>
+</main>
+</body>
+</html>
