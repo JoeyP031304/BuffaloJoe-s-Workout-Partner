@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ironlog">
 <meta name="theme-color" content="#1C2230">
+<meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
@@ -76,7 +77,7 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid v
 .list li .s{font-size:13px;color:var(--ink-2)}
 .list li[data-act],.list li[data-pick],.list li .grow[data-act]{cursor:pointer}
 .tabs{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tab-h) + var(--safe-b));padding-bottom:var(--safe-b);background:var(--paper);border-top:1px solid var(--line);display:flex;z-index:20}
-.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--ink-2)}
+.tabs button{flex:1;min-width:0;padding:0 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--ink-2)}
 .tabs button.on{color:var(--red)}
 .tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .hidden{display:none !important}
@@ -138,6 +139,10 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid v
 .toast.show{opacity:1}
 .kbd{display:inline-block;background:var(--mat);border:1px solid var(--line);border-radius:6px;padding:0 6px;font-size:12px}
 details summary{cursor:pointer;font-weight:600}
+.wiz-ill{width:100%;height:auto;display:block;border-radius:12px;background:#F2F2F7;margin:10px 0}
+.wiz-ill text{font-family:-apple-system,"Barlow",system-ui,sans-serif}
+.wiz-bar{height:6px;background:var(--mat);border-radius:3px;overflow:hidden}.wiz-bar i{display:block;height:100%;background:var(--red)}
+.wiz-steps{padding-left:20px;margin:8px 0 0}.wiz-steps li{margin-bottom:6px}
 .plates{display:flex;gap:4px;align-items:flex-end;height:70px;margin:8px 0}
 .plate{width:18px;border-radius:4px;display:flex;align-items:flex-end;justify-content:center;color:#fff;font-size:9px;font-weight:700;padding-bottom:2px}
 @media (prefers-reduced-motion:reduce){ *{transition:none !important;animation:none !important} }
@@ -149,6 +154,7 @@ details summary{cursor:pointer;font-weight:600}
   <button data-tab="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Home</button>
   <button data-tab="train"><svg viewBox="0 0 24 24"><path d="M6 7v10M18 7v10M2 10v4M22 10v4M6 12h12"/></svg>Train</button>
   <button data-tab="plans"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 3v4M16 3v4M4 10h16"/></svg>Plans</button>
+  <button data-tab="food"><svg viewBox="0 0 24 24"><path d="M12 21c-4 0-7-3-7-8 0-4 3-6 5-6 1 0 2 .5 2 .5s1-.5 2-.5c2 0 5 2 5 6 0 5-3 8-7 8z"/><path d="M12 7c0-2 1-3 3-4"/></svg>Food</button>
   <button data-tab="progress"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16l4-5 3 3 5-7"/></svg>Progress</button>
   <button data-tab="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>More</button>
 </nav>
@@ -160,6 +166,8 @@ details summary{cursor:pointer;font-weight:600}
    Data lives in this browser's localStorage. Use More → Backup to export.
    ================================================================ */
 'use strict';
+const APP_VERSION='12';
+const STANDALONE=(()=>{ try{ return window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches; }catch(e){ return false; } })();
 
 /* ---------- Exercise library ---------- */
 const MUSCLES = ['chest','lats','upperback','shoulders','biceps','triceps','forearms','abs','lowerback','glutes','quads','hamstrings','calves'];
@@ -336,6 +344,8 @@ async function importSamsungFile(file){ const merged={steps:[],workouts:[]}; con
   if(!merged.steps.length&&!merged.workouts.length) throw new Error('No step or exercise data found in that file');
   return merged; }
 function localDay(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+async function importFromClipboard(){ let txt=''; try{ txt=await navigator.clipboard.readText(); }catch(e){ toast('Could not read the clipboard — allow paste when asked'); return; } const data=parseHealthText(txt); if(!data){ toast('Clipboard doesn\'t contain Health data from the shortcut'); return; } const r=importHealth(data); const h=healthState(); h.status='connected'; h.connectedAt=h.connectedAt||now(); h.lastSync=now(); save(); closeSheet(); render(); importToast(r); }
+function standaloneNote(){ if(!STANDALONE) return ''; return `<div class="stat" style="border-left:3px solid var(--yellow)"><div class="small"><strong>You're using the Home Screen icon.</strong> iPhone keeps the icon's data separate from Safari's. When the shortcut runs, it opens Ironlog in Safari — so either use Ironlog from Safari, or add a <strong>Copy to Clipboard</strong> action at the end of the shortcut and tap <em>Paste from clipboard</em> here after it runs.</div></div>`; }
 function importToast(r){ toast(`Imported ${r.addedW} workout${r.addedW===1?'':'s'}${r.days?`, ${r.days} day${r.days===1?'':'s'} of steps`:''}${r.skippedW?` (${r.skippedW} already in)`:''}`); }
 function handleImportParam(){ try{ const u=new URL(location.href); let raw=u.searchParams.get('import'); if(!raw) return; let txt=raw;
     try{ if(/^[A-Za-z0-9+/=_-]+$/.test(raw)&&raw.length>40) txt=decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/')))); }catch(e){ txt=raw; }
@@ -359,7 +369,7 @@ function maybeAskAge(){ if(ageKnown()) return false; if(document.getElementById(
   const maxD=new Date(); const max=maxD.getFullYear()+'-'+pad(maxD.getMonth()+1)+'-'+pad(maxD.getDate());
   openSheet(`<div style="text-align:center;padding:8px 0 4px"><h2 style="margin:6px 0 6px">Quick question first</h2><p class="small muted" style="max-width:34ch;margin:0 auto 14px">Ironlog can connect to your phone's health app, but only for adults. Enter your date of birth so we know when to offer it.</p></div>
   <div class="stack"><label>Date of birth<input type="date" id="age-dob" max="${max}" min="1900-01-01" style="font-size:18px"></label><button class="btn primary wide" id="age-save">Continue</button><p class="tiny muted" style="text-align:center">Only used to decide whether the health connection is offered, and it unlocks automatically on your 18th birthday. Everything else in the app works the same. Stays on this device.</p></div>`);
-  document.getElementById('age-save').onclick=()=>{ const v=document.getElementById('age-dob').value; const a=ageFromBirthdate(v); if(a==null||a<0||a>120) return toast('Enter your date of birth'); S.birthdate=v; S.adult= a>=18?'yes':'no'; save(); closeSheet();
+  document.getElementById('age-save').onclick=()=>{ const v=document.getElementById('age-dob').value; const a=ageFromBirthdate(v); if(a==null||a<0||a>120) return toast('Enter your date of birth'); S.birthdate=v; S.adult= a>=18?'yes':'no'; { const h=healthState(); if(h.status==='declined'||h.status==='minor') h.status='unasked'; } save(); closeSheet();
     if(a>=18){ const pend=S._pendingImport; delete S._pendingImport; if(pend){ const r=importHealth(pend); const h=healthState(); h.status='connected'; h.connectedAt=h.connectedAt||now(); h.lastSync=now(); save(); render(); importToast(r); } else setTimeout(maybeAskHealth,250); }
     else { const h=healthState(); h.status='minor'; h.askedAt=now(); save(); render(); toast('Got it — the health connection unlocks on your 18th birthday'); } };
   return true; }
@@ -375,6 +385,70 @@ function maybeAskHealth(){ if(maybeAskAge()) return; const h=healthState(); if(h
 function providerSwitch(){ const pv=healthProvider(); return `<div class="chips" style="margin-bottom:10px"><button class="chip ${pv==='apple'?'on':''}" data-prov="apple">iPhone · Apple Health</button><button class="chip ${pv==='samsung'?'on':''}" data-prov="samsung">Android · Samsung Health</button></div>`; }
 function wireProviderSwitch(){ const sh=document.getElementById('sheet'); if(!sh) return; sh.querySelectorAll('[data-prov]').forEach(b=>b.onclick=()=>{ healthState().provider=b.dataset.prov; save(); healthSheet(); }); }
 function step(n,title,body){ return `<div class="stat"><div class="row" style="gap:12px;align-items:flex-start"><div class="num" style="min-width:28px">${n}</div><div class="grow"><div style="font-weight:600">${title}</div><div class="small muted" style="margin-top:2px">${body}</div></div></div></div>`; }
+
+/* ---------- Illustrated, step-by-step shortcut builder ---------- */
+const ILL = (()=>{ const W=360; const tw=(t,px)=>String(t).length*px*0.56;
+  const esc2=t=>esc(t);
+  function chip(x,y,t,hl){ const w=tw(t,12)+18; return {w,svg:`<rect x="${x}" y="${y-13}" width="${w}" height="24" rx="7" fill="${hl?'#FFE3E6':'#E3ECFF'}" stroke="${hl?'#D7263D':'none'}" stroke-width="2"/><text x="${x+9}" y="${y+4}" font-size="12" font-weight="600" fill="${hl?'#9A1527':'#1E3FB8'}">${esc2(t)}</text>`}; }
+  function bubble(x,y,t){ const w=tw(t,12)+18; return {w,svg:`<rect x="${x}" y="${y-13}" width="${w}" height="24" rx="12" fill="#E3ECFF"/><text x="${x+9}" y="${y+4}" font-size="12" font-weight="600" fill="#1E3FB8">${esc2(t)}</text>`}; }
+  // one iOS-style action card. rows: array of segments; each segment is a string (plain) or {c:'chip',hl:true} / {b:'bubble'}
+  function card(y,icon,title,rows,opts={}){ const h=46+rows.length*32+(opts.foot?26:0); let out=`<rect x="14" y="${y}" width="${W-28}" height="${h}" rx="14" fill="#fff" stroke="${opts.hl?'#D7263D':'#E5E5EA'}" stroke-width="${opts.hl?2:1}"/><rect x="28" y="${y+12}" width="26" height="26" rx="7" fill="${icon}"/><text x="64" y="${y+30}" font-size="14" font-weight="700" fill="#111">${esc2(title)}</text>`;
+    rows.forEach((segs,i)=>{ let x=28; const yy=y+46+i*32+12; segs.forEach(sg=>{ if(typeof sg==='string'){ out+=`<text x="${x}" y="${yy+4}" font-size="13" fill="#333">${esc2(sg)}</text>`; x+=tw(sg,13)+6; } else if(sg.c!=null){ const c=chip(x,yy,sg.c,sg.hl); out+=c.svg; x+=c.w+6+(sg.hl&&opts.num!==false?30:0); } else if(sg.b!=null){ const b=bubble(x,yy,sg.b); out+=b.svg; x+=b.w+6; } }); });
+    if(opts.foot) out+=`<text x="28" y="${y+h-10}" font-size="12" fill="#8E8E93">${esc2(opts.foot)}</text>`;
+    if(opts.num!==false){ let n=opts.startNum||1; rows.forEach((segs,r)=>{ let k=0; segs.forEach(sg=>{ if(sg&&sg.c!=null){ if(sg.hl){ out+=tapAt(y,rows,r,k,n++); } k++; } }); }); }
+    return {h,svg:out}; }
+  function wrap(h,inner){ return `<svg class="wiz-ill" viewBox="0 0 ${W} ${h}" role="img" aria-label="Illustration">${inner}<text x="${W-12}" y="${h-8}" font-size="10" text-anchor="end" fill="#8E8E93">illustration</text></svg>`; }
+  function tap(x,y,n){ return `<circle cx="${x}" cy="${y}" r="12" fill="#D7263D" stroke="#fff" stroke-width="2"/><text x="${x}" y="${y+4.5}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">${n}</text>`; }
+  // badge placed just right of the highlighted chip in row r (0-based) of a card at y
+  function tapAt(cardY,rows,r,chipIdx,n){ let x=28; const segs=rows[r]; let k=0; for(const sg of segs){ if(typeof sg==='string'){ x+=tw(sg,13)+6; continue; } const w=(sg.c!=null?tw(sg.c,12):tw(sg.b,12))+18; if(sg.c!=null){ if(k===chipIdx) return tap(x+w+14,cardY+46+r*32+12,n); k++; x+=w+6+(sg.hl?30:0); continue; } x+=w+6; } return ''; }
+  const HK='#FF2D55', REP='#FF9500', TXT='#8E8E93', DAT='#FF3B30', VAR='#5856D6', URL='#007AFF';
+  return {
+    plus(){ return wrap(150,`<rect x="14" y="14" width="${W-28}" height="60" rx="14" fill="#fff" stroke="#E5E5EA"/><text x="28" y="50" font-size="22" font-weight="800" fill="#111">Shortcuts</text><circle cx="${W-44}" cy="44" r="16" fill="#007AFF"/><text x="${W-44}" y="51" font-size="22" font-weight="700" fill="#fff" text-anchor="middle">+</text>${tap(W-44,80,1)}<rect x="14" y="92" width="${W-28}" height="44" rx="12" fill="#fff" stroke="#E5E5EA"/><text x="28" y="119" font-size="13" fill="#8E8E93">Your shortcuts appear here</text>`); },
+    rename(){ return wrap(170,`<rect x="14" y="14" width="${W-28}" height="140" rx="14" fill="#fff" stroke="#E5E5EA"/><text x="${W/2}" y="44" font-size="16" font-weight="700" fill="#111" text-anchor="middle">New Shortcut ▾</text>${tap(W/2+70,40,1)}<rect x="90" y="60" width="180" height="80" rx="12" fill="#F2F2F7" stroke="#D1D1D6"/><text x="106" y="88" font-size="14" fill="#111">Rename</text>${tap(240,84,2)}<text x="106" y="118" font-size="14" fill="#111">Choose Icon</text>`); },
+    search(q,result){ return wrap(140,`<rect x="14" y="14" width="${W-28}" height="40" rx="12" fill="#fff" stroke="#D7263D" stroke-width="2"/><text x="30" y="39" font-size="13" fill="#111">${esc2(q)}</text>${tap(W-34,34,1)}<rect x="14" y="68" width="${W-28}" height="52" rx="12" fill="#fff" stroke="#E5E5EA"/><rect x="28" y="81" width="26" height="26" rx="7" fill="${HK}"/><text x="64" y="99" font-size="14" font-weight="600" fill="#111">${esc2(result)}</text>${tap(W-34,94,2)}`); },
+    findSteps(){ const c=card(14,HK,'Find Health Samples',[['Find',{c:'Steps',hl:true},'where'],[{c:'Start Date'},{c:'is in the last'},{c:'7 days',hl:true}],['Group By',{c:'Day',hl:true}]],{foot:'tap Show More to see Group By'}); return wrap(c.h+28,c.svg); },
+    repeatEach(inner){ const c=card(14,REP,'Repeat with Each',[['Repeat with each item in',{b:'Health Samples'}]]); let y=14+c.h+8; let out=c.svg; (inner||[]).forEach(t=>{ out+=`<rect x="30" y="${y}" width="${W-60}" height="30" rx="10" fill="#fff" stroke="#E5E5EA" stroke-dasharray="4 3"/><text x="44" y="${y+19}" font-size="12" fill="#8E8E93">${esc2(t)}</text>`; y+=36; }); out+=`<rect x="14" y="${y}" width="${W-28}" height="34" rx="12" fill="#fff" stroke="#E5E5EA"/><text x="28" y="${y+22}" font-size="13" font-weight="600" fill="#FF9500">End Repeat</text>`; return wrap(y+48,out); },
+    getDetail(det,input,n){ const c=card(14,HK,'Get Details of Health Samples',[['Get',{c:det,hl:true},'of',{b:input||'Repeat Item'}]],{startNum:n||1}); return wrap(c.h+28,c.svg); },
+    formatDate(fmt){ const c=card(14,DAT,'Format Date',[['Format',{b:'Start Date'}],['Date Format',{c:'Custom',hl:true}],['Format String',{c:fmt,hl:true}]]); return wrap(c.h+28,c.svg); },
+    textBlock(lines){ const rows=lines.map(l=>l); const c=card(14,TXT,'Text',rows); return wrap(c.h+28,c.svg); },
+    combine(){ const c=card(14,TXT,'Combine Text',[['Combine',{b:'Repeat Results'},'with'],[{c:'New Lines',hl:true}]]); const v=card(14+c.h+8,VAR,'Set Variable',[['Set variable',{c:'StepsText',hl:true},'to',{b:'Combined Text'}]],{startNum:2}); return wrap(v.h+c.h+36,c.svg+v.svg); },
+    combineW(){ const c=card(14,TXT,'Combine Text',[['Combine',{b:'Repeat Results'},'with'],[{c:'New Lines'}]]); const v=card(14+c.h+8,VAR,'Set Variable',[['Set variable',{c:'WorkoutsText',hl:true},'to',{b:'Combined Text'}]]); return wrap(v.h+c.h+36,c.svg+v.svg); },
+    findWorkouts(){ const c=card(14,HK,'Find Health Samples',[['Find',{c:'Workouts',hl:true},'where'],[{c:'Start Date'},{c:'is in the last'},{c:'7 days',hl:true}]]); return wrap(c.h+28,c.svg); },
+    details4(){ const items=['Duration','Distance','Active Energy','Average Heart Rate']; let y=14,out=''; items.forEach((d,i)=>{ const c=card(y,HK,'Get Details of Health Samples',[['Get',{c:d,hl:true},'of',{b:'Repeat Item'}]],{startNum:i+1}); out+=c.svg; y+=c.h+8; }); return wrap(y+14,out); },
+    sendUrl(base){ const t=card(14,TXT,'Text',[[{b:'StepsText'}],[''],[{b:'WorkoutsText'}]]); const e=card(14+t.h+8,URL,'URL Encode',[['Encode',{b:'Text'}]]); return wrap(t.h+e.h+36,t.svg+e.svg); },
+    openUrl(base){ const u=card(14,URL,'URL',[[{c:base.length>30?base.slice(0,30)+'…':base}],[{c:'?import=',hl:true},{b:'URL Encoded Text'}]]); const o=card(14+u.h+8,URL,'Open URLs',[['Open',{b:'URL'}]]); return wrap(u.h+o.h+36,u.svg+o.svg); },
+    allow(){ return wrap(170,`<rect x="40" y="20" width="${W-80}" height="130" rx="16" fill="#fff" stroke="#D1D1D6"/><text x="${W/2}" y="52" font-size="14" font-weight="700" fill="#111" text-anchor="middle">“Sync to Ironlog” would like</text><text x="${W/2}" y="72" font-size="14" font-weight="700" fill="#111" text-anchor="middle">to access your Health data</text><text x="${W/2}" y="96" font-size="12" fill="#8E8E93" text-anchor="middle">Steps · Workouts</text><line x1="40" y1="110" x2="${W-40}" y2="110" stroke="#E5E5EA"/><text x="${W/4+20}" y="136" font-size="15" fill="#007AFF" text-anchor="middle">Don’t Allow</text><line x1="${W/2}" y1="110" x2="${W/2}" y2="150" stroke="#E5E5EA"/><text x="${W*3/4-20}" y="136" font-size="15" font-weight="700" fill="#007AFF" text-anchor="middle">Allow</text>${tap(W*3/4+30,122,1)}`); },
+    share(){ return wrap(200,`<rect x="14" y="14" width="${W-28}" height="64" rx="14" fill="#5856D6"/><text x="28" y="52" font-size="15" font-weight="700" fill="#fff">Sync to Ironlog</text>${tap(W-40,46,1)}<rect x="60" y="92" width="240" height="94" rx="12" fill="#fff" stroke="#D1D1D6"/><text x="76" y="118" font-size="14" fill="#111">Share</text>${tap(280,113,2)}<line x1="60" y1="130" x2="300" y2="130" stroke="#E5E5EA"/><text x="76" y="156" font-size="14" font-weight="600" fill="#111">Copy iCloud Link</text>${tap(280,151,3)}`); },
+  }; })();
+function wizardSteps(){ const base=siteBase()||'https://joeyp031304.github.io/BuffaloJoe-s-Workout-Partner/';
+  return [
+  {t:'Open Shortcuts and start a new one', ill:ILL.plus(), steps:['Open the <strong>Shortcuts</strong> app (it came with your iPhone — purple icon with two overlapping squares).','Tap the <strong>+</strong> in the top-right corner.']},
+  {t:'Name it', ill:ILL.rename(), steps:['Tap <strong>New Shortcut</strong> at the top of the screen.','Tap <strong>Rename</strong>, type <strong>Sync to Ironlog</strong>, tap Done.']},
+  {t:'Add the first action', ill:ILL.search('Find Health Samples','Find Health Samples'), steps:['Tap the search bar at the bottom (<em>Search for apps and actions</em>).','Type <strong>Find Health Samples</strong> and tap the result with the pink heart icon.']},
+  {t:'Tell it to find Steps', ill:ILL.findSteps(), steps:['In the new card, tap the first blue word (it says <em>All Health Samples</em>) and choose <strong>Steps</strong>.','Tap <strong>Add Filter</strong>. Set it to <strong>Start Date · is in the last · 7 · days</strong>.','Tap <strong>Show More</strong> and set <strong>Group By</strong> to <strong>Day</strong>.']},
+  {t:'Add a loop', ill:ILL.repeatEach(['the next few actions go here']), steps:['Search for <strong>Repeat with Each</strong> and tap it.','It fills in <em>Health Samples</em> on its own. You get a <strong>Repeat</strong> card and an <strong>End Repeat</strong> card. The next four actions go <strong>between</strong> them — new actions land there automatically if you keep going.']},
+  {t:'Get the date of each day', ill:ILL.getDetail('Start Date','Repeat Item'), steps:['Search <strong>Get Details of Health Samples</strong>, tap it.','Tap the blue <em>Detail</em> word and pick <strong>Start Date</strong>. It should say <em>of Repeat Item</em>.']},
+  {t:'Make the date plain', ill:ILL.formatDate('yyyy-MM-dd'), steps:['Search <strong>Format Date</strong>, tap it.','Tap <strong>Date Format</strong> → choose <strong>Custom</strong>.','In the box that appears type exactly: <strong>yyyy-MM-dd</strong> (lower-case y and d, capital M).']},
+  {t:'Get the step count', ill:ILL.getDetail('Value','Repeat Item',1), steps:['Search <strong>Get Details of Health Samples</strong> again, tap it.','Tap <em>Detail</em> and pick <strong>Value</strong>.']},
+  {t:'Write the day as text', ill:ILL.textBlock([['date:',{b:'Formatted Date'}],['steps:',{b:'Value'}],['(empty line)']]), steps:['Search <strong>Text</strong>, tap it. Tap inside the box.','Type <strong>date:</strong> and a space, then tap the <strong>Formatted Date</strong> bubble in the row above the keyboard.','Press return. Type <strong>steps:</strong> and a space, tap the <strong>Value</strong> bubble.','Press return once more so there is an empty line. Tap Done.']},
+  {t:'Join the days together', ill:ILL.combine(), steps:['Scroll below <strong>End Repeat</strong>. Search <strong>Combine Text</strong>, tap it. If it didn\'t pick <em>Repeat Results</em> by itself, tap the blue word → Select Variable → tap <strong>Repeat Results</strong>.','Set the separator to <strong>New Lines</strong>.','Search <strong>Set Variable</strong>, tap it. Name it <strong>StepsText</strong>. Its input should be <em>Combined Text</em>.']},
+  {t:'Now workouts — find them', ill:ILL.findWorkouts(), steps:['Search <strong>Find Health Samples</strong> again, tap it.','Set the type to <strong>Workouts</strong>.','Add Filter: <strong>Start Date · is in the last · 7 · days</strong>. (No Group By this time.)']},
+  {t:'Loop over workouts', ill:ILL.repeatEach(['the next actions go here']), steps:['Search <strong>Repeat with Each</strong>, tap it. It should say <em>Health Samples</em> (the workouts you just found).','The next actions go between this Repeat and its End Repeat.']},
+  {t:'Workout type and start time', ill:ILL.getDetail('Workout Type','Repeat Item',1), steps:['<strong>Get Details of Health Samples</strong> → <strong>Workout Type</strong>.','<strong>Get Details of Health Samples</strong> → <strong>Start Date</strong>.','<strong>Format Date</strong> → Custom → type exactly: <strong>yyyy-MM-dd\'T\'HH:mm:ss</strong> (that\'s a capital T inside single quotes, capital H).']},
+  {t:'Duration, distance, calories, heart rate', ill:ILL.details4(), steps:['Add <strong>Get Details of Health Samples</strong> four more times, choosing in order: <strong>Duration</strong>, <strong>Distance</strong>, <strong>Active Energy</strong>, <strong>Average Heart Rate</strong>.','Each should say <em>of Repeat Item</em>.']},
+  {t:'Write the workout as text', ill:ILL.textBlock([['type:',{b:'Workout Type'}],['start:',{b:'Formatted Date'}],['minutes:',{b:'Duration'}],['distance:',{b:'Distance'}],['kcal:',{b:'Active Energy'}],['hr:',{b:'Average Heart Rate'}],['(empty line)']]), steps:['Add a <strong>Text</strong> action. Type each label, a space, then tap the matching bubble; press return after each line:','<strong>type:</strong> Workout Type · <strong>start:</strong> Formatted Date (the second one) · <strong>minutes:</strong> Duration · <strong>distance:</strong> Distance · <strong>kcal:</strong> Active Energy · <strong>hr:</strong> Average Heart Rate','Finish with one empty line.']},
+  {t:'Join the workouts together', ill:ILL.combineW(), steps:['Below the second <strong>End Repeat</strong>: <strong>Combine Text</strong> → Repeat Results → <strong>New Lines</strong>.','<strong>Set Variable</strong> → name it <strong>WorkoutsText</strong>.']},
+  {t:'Put both together', ill:ILL.sendUrl(base), steps:['Add a <strong>Text</strong> action. Tap the <strong>StepsText</strong> bubble (if it isn\'t in the bubble row, tap <em>Select Variable</em> and pick it), press return twice, tap <strong>WorkoutsText</strong>.','Add <strong>URL Encode</strong>. It should encode <em>Text</em>.']},
+  {t:'Send it to Ironlog', ill:ILL.openUrl(base), steps:[`Add a <strong>URL</strong> action. Type this exactly: <span style="user-select:all;word-break:break-all"><strong>${esc(base)}?import=</strong></span>`,'Right after the <strong>=</strong> (no space) tap the <strong>URL Encoded Text</strong> bubble.','Add <strong>Open URLs</strong>. It should open <em>URL</em>.','Optional, for Home Screen users: also add <strong>Copy to Clipboard</strong> (input: the Text from the previous step) so you can tap <em>Paste from clipboard</em> in the app.','Tap <strong>Done</strong> in the top-right.']},
+  {t:'Run it once', ill:ILL.allow(), steps:['Tap the <strong>Sync to Ironlog</strong> tile to run it.','Your iPhone asks for Health access — tap <strong>Allow</strong> (for Steps and Workouts). If it asks to open the website, allow that too.','Ironlog opens and says how much it imported. If it says it couldn\'t read the data, go back and check the labels in the two Text steps.']},
+  {t:'Share it so everyone gets one-tap install', ill:ILL.share(), steps:['Back in Shortcuts, <strong>long-press</strong> the Sync to Ironlog tile.','Tap <strong>Share</strong>, then <strong>Copy iCloud Link</strong>.','Come back to Ironlog → More → Health and paste the link into the box. Done — and send that link to whoever maintains the app so it becomes the built-in button.']},
+  ]; }
+function shortcutWizard(){ const h=healthState(); const steps=wizardSteps(); let i=Math.max(0,Math.min(steps.length-1,Number(h.wizStep)||0));
+  const draw=()=>{ const st=steps[i]; const sh=document.getElementById('sheet'); if(!sh) return; const last=i===steps.length-1; sh.querySelector('.sheet').innerHTML=`<div class="row between"><h2>Build the shortcut</h2><button class="btn ghost sm" id="wz-close">Close</button></div><div class="small muted" style="margin:4px 0 6px">Step ${i+1} of ${steps.length} · ${esc(st.t)}</div><div class="wiz-bar"><i style="width:${Math.round((i+1)/steps.length*100)}%"></i></div>${st.ill}<h3>${esc(st.t)}</h3><ol class="wiz-steps small">${st.steps.map(x=>`<li>${x}</li>`).join('')}</ol><div class="grid2" style="margin-top:14px"><button class="btn quiet" id="wz-back" ${i===0?'disabled':''}>Back</button><button class="btn primary" id="wz-next">${last?'I\'ve added it':'Next'}</button></div><p class="tiny muted" style="text-align:center;margin-top:8px">Your place is saved — switch to Shortcuts and come back any time.</p>`;
+    sh.querySelector('#wz-close').onclick=()=>{ h.wizStep=i; save(); healthSheet(); };
+    sh.querySelector('#wz-back').onclick=()=>{ i=Math.max(0,i-1); h.wizStep=i; save(); draw(); sh.querySelector('.sheet').scrollTop=0; };
+    sh.querySelector('#wz-next').onclick=()=>{ if(last){ h.status='connected'; h.connectedAt=h.connectedAt||now(); h.wizStep=0; save(); closeSheet(); render(); toast('Apple Health connected — run the shortcut to sync'); return; } i++; h.wizStep=i; save(); draw(); sh.querySelector('.sheet').scrollTop=0; }; };
+  openSheet(''); draw(); }
 function shortcutBuildGuide(){ const base=siteBase()||'https://joeyp031304.github.io/BuffaloJoe-s-Workout-Partner/';
   return `<details id="hk-build"><summary class="small" style="font-weight:600">Build the shortcut yourself (about 10 minutes)</summary>
   <p class="tiny muted" style="margin:8px 0">Everything happens in the <strong>Shortcuts</strong> app that comes with every iPhone. Use the search bar at the bottom of the editor to find each action by name. Where you see [brackets], tap the matching blue variable bubble the app offers instead of typing the words.</p>
@@ -397,26 +471,32 @@ function healthSheet(){ if(!isAdult()){ if(ageKnown()) return minorSheet(); mayb
   if(h.status==='connected'){ const n=(S.imported||[]).length; openSheet(`<h2>Health</h2>${providerSwitch()}<div class="row" style="margin:6px 0 12px"><span class="pill green">Connected</span><span class="small muted">${h.lastSync?'Last sync '+fmtDateY(h.lastSync):'No sync yet'} · ${n} workout${n===1?'':'s'} imported</span></div>
     <div class="stack"><p class="small">Syncing happens through the <strong>Sync to Ironlog</strong> shortcut on your phone. Run it any time from the Shortcuts app, or let the daily automation do it.</p>
     <details><summary class="small" style="font-weight:600">Set it to run every morning</summary><ol class="small" style="padding-left:18px;margin:8px 0 0"><li>Open <strong>Shortcuts</strong> → <strong>Automation</strong> tab (bottom) → <strong>+</strong></li><li>Choose <strong>Time of Day</strong>, pick a time, <strong>Daily</strong>, then <strong>Run Immediately</strong> → Next</li><li>Pick <strong>Sync to Ironlog</strong> → Done</li></ol></details>
+    ${standaloneNote()}
+    <button class="btn wide" id="hk-clip">Paste from clipboard</button>
     <details><summary class="small" style="font-weight:600">Paste data manually</summary><textarea id="hk-txt" rows="5" style="margin-top:8px" placeholder="Paste text from the shortcut here"></textarea><button class="btn quiet wide" id="hk-go" style="margin-top:8px">Import pasted data</button></details>
     <button class="btn quiet wide" id="hk-disconnect" style="color:var(--red)">Disconnect Apple Health</button>
     <p class="tiny muted">Disconnecting stops new imports and hides the Steps card. Workouts already imported stay in your history unless you remove them too.</p></div>`);
     document.getElementById('hk-disconnect').onclick=()=>disconnectHealth();
+    document.getElementById('hk-clip').onclick=importFromClipboard;
     wireProviderSwitch();
     document.getElementById('hk-go').onclick=()=>{ const data=parseHealthText(document.getElementById('hk-txt').value); if(!data) return toast('Could not read that — check the format'); const r=importHealth(data); h.lastSync=now(); save(); closeSheet(); render(); importToast(r); };
     return; }
   const ready=shortcutReady();
   openSheet(`<h2>Connect Apple Health</h2>${providerSwitch()}<p class="small muted" style="margin-bottom:12px">Ironlog runs in your browser, and Apple only lets the built-in <strong>Shortcuts</strong> app read Health data. So connecting means adding one small shortcut to your phone. After that, one tap (or an automatic morning run) pulls in your steps and Apple Watch workouts.</p>
    <div class="stack">
-   ${step(1,'Get the "Sync to Ironlog" shortcut', ready? 'Tap the button. The Shortcuts app opens — tap <strong>Add Shortcut</strong>.' : 'The one-tap install link isn\'t set up yet. If someone gave you an iCloud shortcut link, paste it below. Otherwise open the guide underneath and build it — it takes about 10 minutes.')}
-   ${ready?`<a class="btn primary wide" style="text-decoration:none" href="${esc(h.shortcutUrl)}" target="_blank" rel="noopener" id="hk-get">Get the shortcut</a>`:`<input id="hk-url" placeholder="Paste an iCloud shortcut link (starts with https://www.icloud.com/shortcuts/)"><button class="btn quiet wide sm" id="hk-url-save">Save link for this device</button>${shortcutBuildGuide()}`}
+   ${step(1,'Get the "Sync to Ironlog" shortcut', ready? 'Tap the button. The Shortcuts app opens — tap <strong>Add Shortcut</strong>.' : 'The one-tap install link isn\'t set up yet, so this first time it has to be built in the Shortcuts app. The guide below shows every tap with a picture.')}
+   ${ready?`<a class="btn primary wide" style="text-decoration:none" href="${esc(h.shortcutUrl)}" target="_blank" rel="noopener" id="hk-get">Get the shortcut</a>`:`<button class="btn primary wide" id="hk-wizard">Show me how, step by step${h.wizStep?` (resume at step ${Number(h.wizStep)+1})`:''}</button><p class="tiny muted" style="text-align:center;margin:-2px 0 2px">20 small steps with pictures · about 10 minutes · you only do this once</p><details><summary class="tiny muted">Already have an iCloud shortcut link?</summary><input id="hk-url" placeholder="Paste it here (starts with https://www.icloud.com/shortcuts/)" style="margin-top:6px"><button class="btn quiet wide sm" id="hk-url-save" style="margin-top:6px">Save link for this device</button></details>`}
    ${step(2,'Run it once','Open <strong>Shortcuts</strong> and tap <strong>Sync to Ironlog</strong>. Your iPhone asks to allow <strong>Steps</strong> and <strong>Workouts</strong> — tap <strong>Allow</strong>. Ironlog opens with your data.')}
    ${step(3,'Optional: run it every morning','In Shortcuts, go to the <strong>Automation</strong> tab → <strong>+</strong> → <strong>Time of Day</strong> → pick a time, Daily, <strong>Run Immediately</strong> → choose <strong>Sync to Ironlog</strong>.')}
    <button class="btn wide" id="hk-done">I've added the shortcut</button>
-   <details><summary class="tiny muted">Advanced: paste data or test without the shortcut</summary><p class="tiny muted" style="margin:8px 0 4px">The shortcut sends data to: <span style="user-select:all;word-break:break-all">${esc(base)}?import=</span></p><textarea id="hk-txt" rows="5" placeholder="date: 2026-10-15&#10;steps: 8421&#10;&#10;type: Running&#10;start: 2026-10-15T07:02:00&#10;minutes: 25&#10;distance: 3.1&#10;kcal: 410&#10;hr: 152"></textarea><button class="btn quiet wide sm" id="hk-go" style="margin-top:6px">Import pasted data</button></details>
+   ${standaloneNote()}
+   <details><summary class="tiny muted">Advanced: paste data or test without the shortcut</summary><button class="btn quiet wide sm" id="hk-clip" style="margin-top:8px">Paste from clipboard</button><p class="tiny muted" style="margin:8px 0 4px">The shortcut sends data to: <span style="user-select:all;word-break:break-all">${esc(base)}?import=</span></p><textarea id="hk-txt" rows="5" placeholder="date: 2026-10-15&#10;steps: 8421&#10;&#10;type: Running&#10;start: 2026-10-15T07:02:00&#10;minutes: 25&#10;distance: 3.1&#10;kcal: 410&#10;hr: 152"></textarea><button class="btn quiet wide sm" id="hk-go" style="margin-top:6px">Import pasted data</button></details>
    ${h.status==='declined'||h.status==='disconnected'?'':'<button class="btn ghost wide" id="hk-later">Not now</button>'}
    </div>`);
   const sh=document.getElementById('sheet');
   const q=id=>sh.querySelector('#'+id);
+  if(q('hk-wizard')) q('hk-wizard').onclick=()=>shortcutWizard();
+  if(q('hk-clip')) q('hk-clip').onclick=importFromClipboard;
   if(q('hk-url-save')) q('hk-url-save').onclick=()=>{ const v=q('hk-url').value.trim(); if(!v) return toast('Paste a link first'); if(!/^https:\/\/www\.icloud\.com\/shortcuts\//.test(v)) return toast('A shortcut link starts with https://www.icloud.com/shortcuts/ — get it from Shortcuts → Share → Copy iCloud Link'); h.shortcutUrl=v; save(); healthSheet(); toast('Link saved'); };
   q('hk-done').onclick=()=>{ h.status='connected'; h.connectedAt=now(); save(); closeSheet(); render(); toast('Apple Health connected — run the shortcut to sync'); };
   if(q('hk-later')) q('hk-later').onclick=()=>{ h.status='declined'; save(); closeSheet(); };
@@ -429,7 +509,7 @@ function samsungSheet(){ const h=healthState(); const n=(S.imported||[]).length;
    <div class="stat"><div class="row" style="gap:12px"><div class="num" style="min-width:28px">1</div><div class="grow"><div style="font-weight:600">Export from Samsung Health</div><div class="tiny muted">Samsung Health → ☰ → <strong>Settings</strong> → <strong>Download personal data</strong> (older versions: Privacy settings). Pick <strong>CSV</strong>, choose a date range (last month is plenty), select <strong>Activity</strong> and <strong>Exercise</strong>, tap <strong>Request download</strong>. Samsung emails a link, usually within a few hours.</div></div></div></div>
    <div class="stat"><div class="row" style="gap:12px"><div class="num" style="min-width:28px">2</div><div class="grow"><div style="font-weight:600">Import the file here</div><div class="tiny muted">Download the zip from the email, then pick it below. You can also pick a single CSV from inside it.</div></div></div><button class="btn primary wide" id="sh-pick" style="margin-top:10px">Choose export file</button><input type="file" id="sh-file" accept=".zip,.csv,.json,.txt" class="hidden"></div>
    <div class="stat"><div class="row" style="gap:12px"><div class="num" style="min-width:28px">3</div><div class="grow"><div style="font-weight:600">Repeat when you want fresh data</div><div class="tiny muted">Re-importing skips anything already in. A weekly export keeps things current.</div></div></div></div>
-   <details><summary class="small">Advanced: automate with Tasker, or paste data</summary><p class="tiny muted" style="margin:8px 0 4px">An automation app that can read Health Connect (e.g. Tasker with a Health Connect plugin) can open this address with the data attached, same as the iPhone shortcut: <span style="user-select:all;word-break:break-all">${esc(siteBase())}?import=</span></p><textarea id="hk-txt" rows="5" placeholder="date: 2026-10-15&#10;steps: 8421&#10;&#10;type: Running&#10;start: 2026-10-15T07:02:00&#10;minutes: 25&#10;distance: 3.1&#10;kcal: 410&#10;hr: 152"></textarea><button class="btn quiet wide sm" id="hk-go" style="margin-top:6px">Import pasted data</button></details>
+   <details><summary class="small">Advanced: automate with Tasker, or paste data</summary><p class="tiny muted" style="margin:8px 0 4px">An automation app that can read Health Connect (e.g. Tasker with a Health Connect plugin) can open this address with the data attached, same as the iPhone shortcut: <span style="user-select:all;word-break:break-all">${esc(siteBase())}?import=</span></p><textarea id="hk-txt" rows="5" placeholder="date: 2026-10-15&#10;steps: 8421&#10;&#10;type: Running&#10;start: 2026-10-15T07:02:00&#10;minutes: 25&#10;distance: 3.1&#10;kcal: 410&#10;hr: 152"></textarea><button class="btn quiet wide sm" id="hk-go" style="margin-top:6px">Import pasted data</button><button class="btn quiet wide sm" id="hk-clip" style="margin-top:6px">Paste from clipboard</button></details>
    ${connected?`<button class="btn quiet wide" id="hk-disconnect" style="color:var(--red)">Disconnect Samsung Health</button><p class="tiny muted">Disconnecting stops imports and hides the Steps card. Imported workouts stay unless you remove them too.</p>`:(h.status==='declined'||h.status==='disconnected'?'':'<button class="btn ghost wide" id="hk-later">Not now</button>')}
    </div>`);
   const sh=document.getElementById('sheet'); const q=id=>sh.querySelector('#'+id);
@@ -437,6 +517,7 @@ function samsungSheet(){ const h=healthState(); const n=(S.imported||[]).length;
   q('sh-file').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; q('sh-pick').textContent='Reading…'; q('sh-pick').disabled=true; try{ const data=await importSamsungFile(f); const r=importHealth(data); h.status='connected'; h.connectedAt=h.connectedAt||now(); h.lastSync=now(); save(); closeSheet(); render(); importToast(r); }catch(err){ q('sh-pick').textContent='Choose export file'; q('sh-pick').disabled=false; toast(err.message||'Could not read that file'); } };
   q('hk-go').onclick=()=>{ const data=parseHealthText(q('hk-txt').value); if(!data) return toast('Could not read that — check the format'); const r=importHealth(data); h.status='connected'; h.connectedAt=h.connectedAt||now(); h.lastSync=now(); save(); closeSheet(); render(); importToast(r); };
   if(q('hk-disconnect')) q('hk-disconnect').onclick=()=>disconnectHealth();
+  if(q('hk-clip')) q('hk-clip').onclick=importFromClipboard;
   if(q('hk-later')) q('hk-later').onclick=()=>{ h.status='declined'; save(); closeSheet(); };
   wireProviderSwitch(); }
 function weeklyKcal(n){ const out=[]; const d=new Date(); const day=(d.getDay()+6)%7; d.setHours(0,0,0,0); d.setDate(d.getDate()-day); for(let i=n-1;i>=0;i--){ const st=new Date(d); st.setDate(d.getDate()-7*i); const e=new Date(st); e.setDate(st.getDate()+7); out.push({label:fmtDate(st),kcal:S.workouts.filter(w=>w.end&&w.end>=st.getTime()&&w.end<e.getTime()).reduce((a,w)=>a+(kcalOf(w)||0),0)}); } return out; }
@@ -518,8 +599,9 @@ function detectPRs(w){ const prs=[]; w.exercises.forEach(ex=>{ const before=best
 
 /* rest timer */
 let rest={end:0,total:0,timer:null};
-function startRest(sec){ stopRest(); rest.total=sec; rest.end=now()+sec*1000; rest.timer=setInterval(tickRest,250); tickRest(); }
-function stopRest(){ clearInterval(rest.timer); rest.timer=null; rest.end=0; const el=document.getElementById('restbar'); if(el) el.remove(); document.body.classList.remove('has-rest'); }
+function startRest(sec){ stopRest(); rest.total=sec; rest.end=now()+sec*1000; S._rest={end:rest.end,total:sec}; save(); rest.timer=setInterval(tickRest,250); tickRest(); }
+function stopRest(){ clearInterval(rest.timer); rest.timer=null; rest.end=0; if(S._rest){ delete S._rest; save(); } const el=document.getElementById('restbar'); if(el) el.remove(); document.body.classList.remove('has-rest'); }
+function resumeRest(){ const r=S._rest; if(!r||!S.active) { if(S._rest){ delete S._rest; save(); } return; } if(r.end>now()){ rest.total=r.total; rest.end=r.end; rest.timer=setInterval(tickRest,250); tickRest(); } else { delete S._rest; save(); } }
 function tickRest(){ let el=document.getElementById('restbar'); if(!el){ el=document.createElement('div'); el.id='restbar'; el.className='rest'; document.body.appendChild(el); document.body.classList.add('has-rest'); }
   const left=Math.max(0,Math.ceil((rest.end-now())/1000)); const pct=rest.total? (left/rest.total*100):0;
   el.innerHTML=`<div class="t">${mmss(left)}</div><div class="bar"><i style="width:${pct}%"></i></div><button data-act="rest-add">+30s</button><button data-act="rest-skip">Skip</button>`;
@@ -533,9 +615,219 @@ function tickCircuit(){ if(!circ||circ.paused) return; circ.left--; if(circ.left
 function finishCircuit(){ clearInterval(circ.timer); const c=circ.c; const w={id:uid(),start:circ.start,end:now(),name:c.name,routineId:null,circuit:true,exercises:[]}; w.kcal=estimateKcal(w); S.workouts.push(w); save(); const el=document.getElementById('circuit'); if(el){ el.className='circuit donez'; el.innerHTML=`<div class="mv">Done</div><div class="cd" style="font-size:64px">${c.name}</div><div class="nx">${fmtDur(w.end-w.start)} logged to history</div><div class="ctl"><button data-act="circuit-close">Close</button></div>`; } beep(1040,200,.3); setTimeout(()=>beep(1320,300,.3),220); circ=null; }
 function renderCircuit(){ let el=document.getElementById('circuit'); if(!el){ el=document.createElement('div'); el.id='circuit'; document.body.appendChild(el); } const st=circ.steps[circ.i]; el.className='circuit '+st.phase; el.innerHTML=`<div class="small" style="opacity:.85">${st.round?`Round ${st.round} of ${circ.c.rounds}`:esc(circ.c.name)}</div><div class="mv">${esc(st.label)}</div><div class="cd">${circ.left}</div><div class="nx">Next: ${esc(st.next)}</div><div class="ctl"><button data-act="circuit-pause">${circ.paused?'Resume':'Pause'}</button><button data-act="circuit-skip">Skip</button><button data-act="circuit-quit">Quit</button></div>`; }
 
+/* ================================================================
+   Food & macros
+   Built-in table: typical values per 100 g (kcal, protein, carbs, fat, sugar, fiber), default serving grams, serving label.
+   For exact packaged products use the barcode / online lookup (Open Food Facts) or the label.
+   ================================================================ */
+const FOODS = [
+ // name, kcal, p, c, f, sugar, fiber, serving g, serving label
+ ['Chicken breast, cooked',165,31,0,3.6,0,0,120,'1 breast (120 g)'],
+ ['Chicken thigh, cooked',209,26,0,11,0,0,100,'1 thigh (100 g)'],
+ ['Ground beef 85%, cooked',250,26,0,15,0,0,113,'4 oz (113 g)'],
+ ['Ground beef 93%, cooked',182,27,0,8,0,0,113,'4 oz (113 g)'],
+ ['Steak, sirloin, cooked',200,30,0,8,0,0,170,'6 oz (170 g)'],
+ ['Ground turkey 93%, cooked',176,25,0,8,0,0,113,'4 oz (113 g)'],
+ ['Turkey breast, deli',104,18,3,2,2,0,56,'2 oz (56 g)'],
+ ['Pork chop, cooked',231,27,0,13,0,0,120,'1 chop (120 g)'],
+ ['Pork tenderloin, cooked',143,26,0,3.5,0,0,113,'4 oz (113 g)'],
+ ['Bacon, cooked',541,37,1.4,42,0,0,16,'2 slices (16 g)'],
+ ['Ham, deli',107,17,2,3,1,0,56,'2 oz (56 g)'],
+ ['Salmon, cooked',208,20,0,13,0,0,150,'1 fillet (150 g)'],
+ ['Tuna, canned in water',116,26,0,1,0,0,120,'1 can drained (120 g)'],
+ ['Shrimp, cooked',99,24,0,0.3,0,0,85,'3 oz (85 g)'],
+ ['Tilapia, cooked',128,26,0,2.7,0,0,120,'1 fillet (120 g)'],
+ ['Cod, cooked',105,23,0,0.9,0,0,120,'1 fillet (120 g)'],
+ ['Egg, whole',143,13,0.7,9.5,0.4,0,50,'1 large (50 g)'],
+ ['Egg whites',52,11,0.7,0.2,0.7,0,33,'1 large white (33 g)'],
+ ['Tofu, firm',144,17,3,9,0.7,2,100,'⅓ block (100 g)'],
+ ['Tempeh',192,20,8,11,0,0,84,'3 oz (84 g)'],
+ ['Edamame, shelled',121,12,9,5,2,5,100,'⅔ cup (100 g)'],
+ ['Black beans, cooked',132,9,24,0.5,0.3,9,172,'1 cup (172 g)'],
+ ['Chickpeas, cooked',164,9,27,2.6,5,8,164,'1 cup (164 g)'],
+ ['Lentils, cooked',116,9,20,0.4,2,8,198,'1 cup (198 g)'],
+ ['Kidney beans, cooked',127,9,23,0.5,0.3,6,177,'1 cup (177 g)'],
+ ['Pinto beans, cooked',143,9,26,0.6,0.3,9,171,'1 cup (171 g)'],
+ ['Greek yogurt, plain nonfat',59,10,3.6,0.4,3.2,0,170,'¾ cup (170 g)'],
+ ['Greek yogurt, plain 2%',73,10,4,2,4,0,170,'¾ cup (170 g)'],
+ ['Yogurt, plain whole milk',61,3.5,4.7,3.3,4.7,0,245,'1 cup (245 g)'],
+ ['Cottage cheese, 2%',84,11,4,2.3,4,0,113,'½ cup (113 g)'],
+ ['Milk, 2%',50,3.3,4.8,2,4.8,0,244,'1 cup (244 g)'],
+ ['Milk, whole',61,3.2,4.8,3.3,4.8,0,244,'1 cup (244 g)'],
+ ['Milk, skim',34,3.4,5,0.1,5,0,245,'1 cup (245 g)'],
+ ['Almond milk, unsweetened',15,0.6,0.6,1.2,0,0.4,240,'1 cup (240 g)'],
+ ['Oat milk',47,1,7,1.5,4,0.8,240,'1 cup (240 g)'],
+ ['Cheddar cheese',403,23,1.3,33,0.5,0,28,'1 oz (28 g)'],
+ ['Mozzarella, part skim',254,24,3,16,1,0,28,'1 oz (28 g)'],
+ ['Parmesan, grated',431,38,4,29,0.9,0,5,'1 tbsp (5 g)'],
+ ['Cream cheese',342,6,4,34,3,0,28,'2 tbsp (28 g)'],
+ ['Butter',717,0.9,0.1,81,0.1,0,14,'1 tbsp (14 g)'],
+ ['Whey protein powder',375,75,10,5,5,2,30,'1 scoop (30 g)'],
+ ['Protein bar (typical)',380,30,38,12,10,8,60,'1 bar (60 g)'],
+ ['Peanut butter',588,25,20,50,9,6,32,'2 tbsp (32 g)'],
+ ['Almond butter',614,21,19,56,4,10,32,'2 tbsp (32 g)'],
+ ['Almonds',579,21,22,50,4,12,28,'1 oz / 23 nuts (28 g)'],
+ ['Walnuts',654,15,14,65,2.6,7,28,'1 oz (28 g)'],
+ ['Cashews',553,18,30,44,6,3,28,'1 oz (28 g)'],
+ ['Peanuts',567,26,16,49,4,9,28,'1 oz (28 g)'],
+ ['Chia seeds',486,17,42,31,0,34,28,'2 tbsp (28 g)'],
+ ['Flax seeds, ground',534,18,29,42,2,27,14,'2 tbsp (14 g)'],
+ ['Olive oil',884,0,0,100,0,0,14,'1 tbsp (14 g)'],
+ ['Avocado',160,2,9,15,0.7,7,150,'1 medium (150 g)'],
+ ['Rice, white, cooked',130,2.7,28,0.3,0,0.4,158,'1 cup (158 g)'],
+ ['Rice, brown, cooked',123,2.7,26,1,0.4,1.6,195,'1 cup (195 g)'],
+ ['Quinoa, cooked',120,4.4,21,1.9,0.9,2.8,185,'1 cup (185 g)'],
+ ['Pasta, cooked',158,5.8,31,0.9,0.6,1.8,140,'1 cup (140 g)'],
+ ['Whole wheat pasta, cooked',124,5,27,0.5,0.6,3.9,140,'1 cup (140 g)'],
+ ['Oats, dry',389,17,66,7,1,11,40,'½ cup dry (40 g)'],
+ ['Oatmeal, cooked with water',71,2.5,12,1.5,0.3,1.7,234,'1 cup (234 g)'],
+ ['Bread, white',266,9,49,3.3,5,2.7,28,'1 slice (28 g)'],
+ ['Bread, whole wheat',247,13,41,3.4,6,7,28,'1 slice (28 g)'],
+ ['Bagel, plain',250,10,49,1.5,5,2,100,'1 bagel (100 g)'],
+ ['Tortilla, flour',312,8,51,8,2,3,45,'1 medium (45 g)'],
+ ['Tortilla, corn',218,5.7,45,2.8,0.9,6,26,'1 small (26 g)'],
+ ['Potato, baked',93,2.5,21,0.1,1.2,2.2,173,'1 medium (173 g)'],
+ ['Sweet potato, baked',90,2,21,0.2,6.5,3.3,150,'1 medium (150 g)'],
+ ['French fries',312,3.4,41,15,0.3,3.8,117,'medium serving (117 g)'],
+ ['Cereal, typical sweetened',380,6,85,3,30,3,40,'1 cup (40 g)'],
+ ['Granola',471,10,64,20,20,7,60,'½ cup (60 g)'],
+ ['Pancake',227,6,28,10,6,1,80,'2 pancakes (80 g)'],
+ ['Banana',89,1.1,23,0.3,12,2.6,118,'1 medium (118 g)'],
+ ['Apple',52,0.3,14,0.2,10,2.4,182,'1 medium (182 g)'],
+ ['Orange',47,0.9,12,0.1,9,2.4,131,'1 medium (131 g)'],
+ ['Strawberries',32,0.7,7.7,0.3,4.9,2,152,'1 cup (152 g)'],
+ ['Blueberries',57,0.7,14,0.3,10,2.4,148,'1 cup (148 g)'],
+ ['Grapes',69,0.7,18,0.2,16,0.9,151,'1 cup (151 g)'],
+ ['Watermelon',30,0.6,7.6,0.2,6,0.4,152,'1 cup (152 g)'],
+ ['Pineapple',50,0.5,13,0.1,10,1.4,165,'1 cup (165 g)'],
+ ['Mango',60,0.8,15,0.4,14,1.6,165,'1 cup (165 g)'],
+ ['Raisins',299,3,79,0.5,59,3.7,40,'small box (40 g)'],
+ ['Broccoli, cooked',35,2.4,7,0.4,1.4,3.3,156,'1 cup (156 g)'],
+ ['Spinach, raw',23,2.9,3.6,0.4,0.4,2.2,30,'1 cup (30 g)'],
+ ['Kale, raw',49,4.3,9,0.9,2.3,3.6,67,'1 cup (67 g)'],
+ ['Lettuce, romaine',17,1.2,3.3,0.3,1.2,2.1,47,'1 cup (47 g)'],
+ ['Carrots',41,0.9,10,0.2,4.7,2.8,61,'1 medium (61 g)'],
+ ['Tomato',18,0.9,3.9,0.2,2.6,1.2,123,'1 medium (123 g)'],
+ ['Cucumber',15,0.7,3.6,0.1,1.7,0.5,100,'1 cup (100 g)'],
+ ['Bell pepper',31,1,6,0.3,4.2,2.1,119,'1 medium (119 g)'],
+ ['Onion',40,1.1,9,0.1,4.2,1.7,110,'1 medium (110 g)'],
+ ['Mushrooms',22,3.1,3.3,0.3,2,1,70,'1 cup (70 g)'],
+ ['Green beans, cooked',35,1.9,7.9,0.3,3.6,3.2,125,'1 cup (125 g)'],
+ ['Corn, cooked',96,3.4,21,1.5,4.5,2.4,154,'1 cup (154 g)'],
+ ['Peas, cooked',84,5.4,16,0.2,5.9,5.5,160,'1 cup (160 g)'],
+ ['Asparagus, cooked',22,2.4,4.1,0.2,1.3,2,180,'1 cup (180 g)'],
+ ['Hummus',166,8,14,10,0.3,6,30,'2 tbsp (30 g)'],
+ ['Salsa',36,1.5,7,0.2,4,1.5,36,'2 tbsp (36 g)'],
+ ['Ketchup',101,1,27,0.1,21,0.3,17,'1 tbsp (17 g)'],
+ ['Mayonnaise',680,1,0.6,75,0.6,0,14,'1 tbsp (14 g)'],
+ ['Ranch dressing',430,1,6,45,3,0,30,'2 tbsp (30 g)'],
+ ['Honey',304,0.3,82,0,82,0.2,21,'1 tbsp (21 g)'],
+ ['Sugar',387,0,100,0,100,0,4,'1 tsp (4 g)'],
+ ['Maple syrup',260,0,67,0.1,60,0,20,'1 tbsp (20 g)'],
+ ['Pizza, cheese',266,11,33,10,3.6,2.3,107,'1 slice (107 g)'],
+ ['Pizza, pepperoni',298,13,34,13,3.8,2.3,113,'1 slice (113 g)'],
+ ['Hamburger, fast food',254,13,30,9,6,1,110,'1 regular (110 g)'],
+ ['Cheeseburger, fast food',303,15,30,14,6,1,120,'1 regular (120 g)'],
+ ['Chicken nuggets',296,15,16,19,0.5,1,96,'6 pieces (96 g)'],
+ ['Burrito, chicken (typical)',206,11,25,7,1.5,2.5,300,'1 burrito (300 g)'],
+ ['Sushi roll, California',150,6,26,2.5,4,1.5,180,'1 roll / 8 pc (180 g)'],
+ ['Ramen, instant, prepared',188,4,27,7,1,1,230,'1 package prepared (230 g)'],
+ ['Mac and cheese',164,6,20,7,2,1,200,'1 cup (200 g)'],
+ ['Chocolate, milk',535,8,59,30,52,3,43,'1 bar (43 g)'],
+ ['Chocolate, dark 70%',598,8,46,43,24,11,28,'1 oz (28 g)'],
+ ['Ice cream, vanilla',207,3.5,24,11,21,0.7,66,'½ cup (66 g)'],
+ ['Cookie, chocolate chip',488,5.5,64,24,38,2,30,'1 large (30 g)'],
+ ['Potato chips',536,7,53,35,0.4,4.8,28,'1 oz (28 g)'],
+ ['Pretzels',380,10,80,3,2,3,28,'1 oz (28 g)'],
+ ['Popcorn, air-popped',387,13,78,4.5,0.9,15,8,'1 cup (8 g)'],
+ ['Tortilla chips',489,7,65,23,1,5,28,'1 oz (28 g)'],
+ ['Soda, cola',41,0,10.6,0,10.6,0,355,'1 can (355 ml)'],
+ ['Sports drink',25,0,6,0,6,0,591,'1 bottle (591 ml)'],
+ ['Orange juice',45,0.7,10,0.2,8.4,0.2,248,'1 cup (248 ml)'],
+ ['Energy drink',45,0,11,0,11,0,473,'1 can (473 ml)'],
+ ['Beer, regular',43,0.5,3.6,0,0,0,355,'1 can (355 ml)'],
+ ['Wine, red',85,0.1,2.6,0,0.6,0,147,'1 glass (147 ml)'],
+ ['Coffee, black',1,0.1,0,0,0,0,240,'1 cup (240 ml)'],
+ ['Latte, 2% milk',44,2.9,4.2,1.8,4.2,0,355,'12 oz (355 ml)'],
+ ['Protein shake, ready-to-drink',75,9,2.5,1.5,0.5,1,330,'1 bottle (330 ml)'],
+];
+const MEALS=['Breakfast','Lunch','Dinner','Snacks'];
+function foodState(){ if(!S.food) S.food={entries:[],custom:[],recent:[],targets:null,day:null}; return S.food; }
+function todayKey(){ return localDay(new Date()); }
+function foodDay(){ const f=foodState(); return f.day||todayKey(); }
+function builtinFoods(){ return FOODS.map((r,i)=>({id:'bf'+i,name:r[0],kcal:r[1],p:r[2],c:r[3],f:r[4],sugar:r[5],fiber:r[6],serving:r[7],servingLabel:r[8],per:100,source:'typical'})); }
+function allFoods(){ return (foodState().custom||[]).map(x=>({...x,source:x.source||'mine'})).concat(builtinFoods()); }
+function macroTargets(){ const f=foodState(); if(f.targets) return f.targets; const c=profileCalories(); const kcal=c?c.target:2000; const p=c?c.protein:120; const fat=Math.round(kcal*0.30/9); const carbs=Math.max(0,Math.round((kcal-p*4-fat*9)/4)); return {kcal,p,c:carbs,f:fat,sugar:Math.round(kcal*0.10/4),fiber:28,auto:true}; }
+function scaleFood(food,grams){ const k=grams/(food.per||100); const r=x=>round((Number(x)||0)*k,1); return {kcal:Math.round((Number(food.kcal)||0)*k),p:r(food.p),c:r(food.c),f:r(food.f),sugar:r(food.sugar),fiber:r(food.fiber),sodium:food.sodium!=null?Math.round((Number(food.sodium)||0)*k):null}; }
+function dayEntries(day){ return foodState().entries.filter(e=>e.date===day); }
+function dayTotals(day){ const t={kcal:0,p:0,c:0,f:0,sugar:0,fiber:0}; dayEntries(day).forEach(e=>{ t.kcal+=Number(e.kcal)||0; t.p+=Number(e.p)||0; t.c+=Number(e.c)||0; t.f+=Number(e.f)||0; t.sugar+=Number(e.sugar)||0; t.fiber+=Number(e.fiber)||0; }); Object.keys(t).forEach(k=>t[k]=round(t[k],k==='kcal'?0:1)); return t; }
+function macroBar(label,val,target,unit,color){ const pct=target?Math.min(100,Math.round(val/target*100)):0; const over=target&&val>target; return `<div class="row between small" style="margin-top:8px"><span style="font-weight:600">${label}</span><span class="${over?'':'muted'}" style="${over?'color:var(--red);font-weight:600':''}">${val}${unit} / ${target}${unit}</span></div><div class="wiz-bar" style="margin-top:4px"><i style="width:${pct}%;background:${over?'var(--red)':color}"></i></div>`; }
+function viewFood(){ const day=foodDay(); const t=dayTotals(day); const tg=macroTargets(); const isToday=day===todayKey(); const d=new Date(day+'T12:00:00'); const label=isToday?'Today':d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); const remaining=tg.kcal-t.kcal;
+  const burned=S.workouts.filter(w=>w.end&&localDay(new Date(w.end))===day).reduce((a,w)=>a+(kcalOf(w)||0),0);
+  return header('Food',`<span class="row" style="gap:6px"><button class="btn ghost sm" data-act="food-day" data-d="-1">‹</button><span style="min-width:72px;text-align:center">${label}</span><button class="btn ghost sm" data-act="food-day" data-d="1" ${isToday?'disabled':''}>›</button></span>`)+
+  `<div class="card"><div class="row between"><div><div class="muted small">Calories</div><div class="big-num" style="font-size:44px">${t.kcal.toLocaleString()}</div><div class="tiny muted">of ${tg.kcal.toLocaleString()} · ${remaining>=0?remaining.toLocaleString()+' left':Math.abs(remaining).toLocaleString()+' over'}${burned?` · ≈${burned} burned today`:''}</div></div><button class="btn primary" data-act="food-add">+ Add food</button></div>
+   ${macroBar('Protein',t.p,tg.p,' g','var(--blue)')}${macroBar('Carbs',t.c,tg.c,' g','var(--yellow)')}${macroBar('Fat',t.f,tg.f,' g','var(--orange)')}${macroBar('Sugar',t.sugar,tg.sugar,' g','var(--red)')}${macroBar('Fiber',t.fiber,tg.fiber,' g','var(--green)')}
+   <div class="row between" style="margin-top:10px"><span class="tiny muted">${tg.auto?'Targets from your profile and goal':'Custom targets'}</span><button class="btn ghost sm" data-act="food-targets">Edit targets</button></div></div>
+  ${MEALS.map(m=>{ const es=dayEntries(day).filter(e=>e.meal===m); const mk=es.reduce((a,e)=>a+(Number(e.kcal)||0),0); return `<div class="card flush"><div class="row between" style="padding:12px 16px 6px"><h3>${m}</h3><span class="row" style="gap:8px"><span class="small muted">${mk?mk.toLocaleString()+' kcal':''}</span><button class="btn ghost sm" data-act="food-add" data-meal="${m}">+ Add</button></span></div>${es.length?`<ul class="list">${es.map(e=>`<li data-act="food-edit" data-id="${e.id}">${e.photo?`<img src="${e.photo}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover">`:''}<div class="grow"><div class="t">${esc(e.name)}${e.brand?` <span class="tiny muted">${esc(e.brand)}</span>`:''}</div><div class="s">${esc(e.qtyLabel||'')}${e.qtyLabel?' · ':''}${e.kcal} kcal · P ${e.p} · C ${e.c} · F ${e.f}${e.sugar?` · sugar ${e.sugar}`:''}</div></div><span class="muted">›</span></li>`).join('')}</ul>`:'<p class="small muted" style="padding:0 16px 12px">Nothing yet.</p>'}</div>`; }).join('')}
+  <p class="tiny muted" style="text-align:center">Built-in foods are typical values. For exact products, scan or look up the barcode, or copy the label.</p>`; }
+function foodSearchSheet(meal){ let q=''; const draw=()=>{ const el=document.getElementById('fs-list'); if(!el) return; const f=foodState(); const qq=q.trim().toLowerCase(); let list; if(!qq){ const rec=(f.recent||[]).map(id=>allFoods().find(x=>x.id===id)).filter(Boolean); list=rec.length?rec:allFoods().slice(0,12); el.previousElementSibling.textContent=rec.length?'Recent':'Common foods'; } else { list=allFoods().filter(x=>x.name.toLowerCase().includes(qq)).slice(0,40); el.previousElementSibling.textContent=list.length?'Matches':'No matches in the built-in list'; }
+    el.innerHTML=list.map(x=>`<li data-food="${x.id}"><div class="grow"><div class="t">${esc(x.name)}${x.brand?` <span class="tiny muted">${esc(x.brand)}</span>`:''}</div><div class="s">${esc(x.servingLabel||(x.serving+' g'))} · ${scaleFood(x,x.serving||100).kcal} kcal · P ${scaleFood(x,x.serving||100).p} g${x.source==='mine'?' · my food':x.source==='off'?' · Open Food Facts':''}</div></div><span class="muted">›</span></li>`).join(''); };
+  openSheet(`<h2>Add food${meal?` · ${meal}`:''}</h2><input class="search" id="fs-q" placeholder="Search foods" autocomplete="off"><div class="grid2" style="margin-bottom:10px"><button class="btn quiet sm" id="fs-scan">Scan barcode</button><button class="btn quiet sm" id="fs-online">Search packaged foods online</button><button class="btn quiet sm" id="fs-manual">Enter manually</button><button class="btn quiet sm" id="fs-photo">Photo + manual</button></div><div class="small muted" style="margin-bottom:4px">Common foods</div><ul class="list" id="fs-list"></ul>`);
+  draw(); const sh=document.getElementById('sheet');
+  sh.querySelector('#fs-q').addEventListener('input',e=>{ q=e.target.value; draw(); });
+  sh.addEventListener('click',e=>{ const li=e.target.closest('[data-food]'); if(li){ const food=allFoods().find(x=>x.id===li.dataset.food); if(food) servingSheet(food,meal); return; } if(e.target.id==='fs-manual') manualFoodSheet(meal,null); if(e.target.id==='fs-photo') manualFoodSheet(meal,null,true); if(e.target.id==='fs-scan') barcodeSheet(meal); if(e.target.id==='fs-online') onlineSearchSheet(meal,sh.querySelector('#fs-q').value); }); }
+function servingSheet(food,meal,existing){ const f=foodState(); let grams= existing? existing.grams : (food.serving||100); let unit= existing? (existing.unit||'serving') : (food.serving?'serving':'g'); let qty= existing? existing.qty : 1; let photo= existing? existing.photo : null; let mealSel= existing? existing.meal : (meal||guessMeal());
+  const gramsFor=()=>{ if(unit==='g') return qty; if(unit==='oz') return qty*28.35; return qty*(food.serving||100); };
+  const draw=()=>{ const g=gramsFor(); const m=scaleFood(food,g); const sh=document.getElementById('sheet'); sh.querySelector('#sv-out').innerHTML=`<div class="grid3" style="margin-top:8px"><div class="stat"><div class="lbl">Calories</div><div class="num">${m.kcal}</div></div><div class="stat"><div class="lbl">Protein</div><div class="num">${m.p} g</div></div><div class="stat"><div class="lbl">Carbs</div><div class="num">${m.c} g</div></div><div class="stat"><div class="lbl">Fat</div><div class="num">${m.f} g</div></div><div class="stat"><div class="lbl">Sugar</div><div class="num">${m.sugar} g</div></div><div class="stat"><div class="lbl">Fiber</div><div class="num">${m.fiber} g</div></div></div><p class="tiny muted" style="margin-top:6px">${Math.round(g)} g total${food.source==='typical'?' · typical values':food.source==='off'?' · Open Food Facts':''}</p>`; };
+  openSheet(`<h2>${esc(food.name)}</h2>${food.brand?`<p class="small muted">${esc(food.brand)}</p>`:''}<div class="stack" style="margin-top:8px"><div class="row"><input type="number" inputmode="decimal" step="any" id="sv-qty" value="${qty}" style="width:90px"><select id="sv-unit" class="grow">${food.serving?`<option value="serving" ${unit==='serving'?'selected':''}>× ${esc(food.servingLabel||food.serving+' g')}</option>`:''}<option value="g" ${unit==='g'?'selected':''}>grams</option><option value="oz" ${unit==='oz'?'selected':''}>ounces</option></select></div><div id="sv-out"></div><label>Meal<select id="sv-meal">${MEALS.map(m=>`<option ${m===mealSel?'selected':''}>${m}</option>`).join('')}</select></label><div class="row"><button class="btn quiet sm" id="sv-photo">${photo?'Change photo':'Add photo'}</button><input type="file" id="sv-file" accept="image/*" capture="environment" class="hidden">${photo?`<img id="sv-thumb" src="${photo}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover">`:'<span id="sv-thumb"></span>'}</div><button class="btn primary wide" id="sv-save">${existing?'Save changes':'Add to '+mealSel}</button>${existing?'<button class="btn quiet wide" id="sv-del" style="color:var(--red)">Remove</button>':''}${food.source!=='typical'&&!existing&&food.source!=='mine'?'<button class="btn quiet wide sm" id="sv-keep">Save to my foods</button>':''}</div>`);
+  const sh=document.getElementById('sheet'); const q=id=>sh.querySelector('#'+id); draw();
+  q('sv-qty').addEventListener('input',e=>{ qty=Number(e.target.value)||0; draw(); }); q('sv-unit').addEventListener('change',e=>{ unit=e.target.value; draw(); }); q('sv-meal').addEventListener('change',e=>{ mealSel=e.target.value; q('sv-save').textContent= existing?'Save changes':'Add to '+mealSel; });
+  q('sv-photo').onclick=()=>q('sv-file').click(); q('sv-file').onchange=async e=>{ const file=e.target.files[0]; if(!file) return; photo=await shrinkPhoto(file); q('sv-thumb').outerHTML=`<img id="sv-thumb" src="${photo}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover">`; q('sv-photo').textContent='Change photo'; };
+  if(q('sv-keep')) q('sv-keep').onclick=()=>{ const c={...food,id:'cf_'+uid(),source:'mine'}; f.custom.push(c); save(); toast('Saved to my foods'); q('sv-keep').remove(); };
+  q('sv-save').onclick=()=>{ if(!(qty>0)) return toast('Enter an amount'); const g=gramsFor(); const m=scaleFood(food,g); const qtyLabel= unit==='serving'? `${qty} × ${food.servingLabel||food.serving+' g'}` : `${qty} ${unit}`; const entry={id: existing?existing.id:uid(),date: existing?existing.date:foodDay(),meal:mealSel,name:food.name,brand:food.brand||'',foodId:food.id,qty,unit,grams:Math.round(g),qtyLabel,...m,photo,ts:now()};
+    if(existing){ const i=f.entries.findIndex(x=>x.id===existing.id); f.entries[i]=entry; } else f.entries.push(entry);
+    if(food.id){ f.recent=[food.id].concat((f.recent||[]).filter(x=>x!==food.id)).slice(0,20); }
+    if(!saveFood()) return; closeSheet(); S.tab='food'; render(); toast(existing?'Updated':`Added · ${m.kcal} kcal`); };
+  if(q('sv-del')) q('sv-del').onclick=()=>{ f.entries=f.entries.filter(x=>x.id!==existing.id); save(); closeSheet(); render(); toast('Removed'); }; }
+function saveFood(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); return true; }catch(e){ const f=foodState(); const withPhotos=f.entries.filter(x=>x.photo).length; if(withPhotos){ f.entries.forEach(x=>{ if(x.photo&&x.date!==foodDay()) delete x.photo; }); try{ localStorage.setItem(KEY, JSON.stringify(S)); toast('Storage was full — older food photos were removed'); return true; }catch(e2){} } toast('Could not save — storage is full'); return false; } }
+function guessMeal(){ const h=new Date().getHours(); return h<10.5?'Breakfast':h<15?'Lunch':h<20.5?'Dinner':'Snacks'; }
+function shrinkPhoto(file){ return new Promise(res=>{ const img=new Image(); const u=URL.createObjectURL(file); img.onload=()=>{ const max=320; const k=Math.min(1,max/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg',0.6)); }; img.onerror=()=>res(null); img.src=u; }); }
+function manualFoodSheet(meal,existing,withPhoto){ const e=existing||{}; openSheet(`<h2>${existing?'Edit food':'Enter a food'}</h2><p class="small muted" style="margin-bottom:8px">Copy the numbers from the label or menu. Per the amount you ate.</p><div class="stack"><input id="mf-name" placeholder="Name (e.g. Chipotle chicken bowl)" value="${esc(e.name||'')}"><input id="mf-brand" placeholder="Brand or restaurant (optional)" value="${esc(e.brand||'')}"><input id="mf-qty" placeholder="Amount (e.g. 1 bowl, 2 slices)" value="${esc(e.qtyLabel||'')}"><div class="grid3"><label class="small">Calories<input id="mf-kcal" type="number" inputmode="decimal" value="${e.kcal??''}"></label><label class="small">Protein g<input id="mf-p" type="number" inputmode="decimal" step="any" value="${e.p??''}"></label><label class="small">Carbs g<input id="mf-c" type="number" inputmode="decimal" step="any" value="${e.c??''}"></label><label class="small">Fat g<input id="mf-f" type="number" inputmode="decimal" step="any" value="${e.f??''}"></label><label class="small">Sugar g<input id="mf-s" type="number" inputmode="decimal" step="any" value="${e.sugar??''}"></label><label class="small">Fiber g<input id="mf-fi" type="number" inputmode="decimal" step="any" value="${e.fiber??''}"></label></div><label>Meal<select id="mf-meal">${MEALS.map(m=>`<option ${m===(e.meal||meal||guessMeal())?'selected':''}>${m}</option>`).join('')}</select></label><div class="row"><button class="btn quiet sm" id="mf-photo">${e.photo?'Change photo':'Add photo'}</button><input type="file" id="mf-file" accept="image/*" capture="environment" class="hidden">${e.photo?`<img id="mf-thumb" src="${e.photo}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover">`:'<span id="mf-thumb"></span>'}</div><label class="row" style="gap:8px"><input type="checkbox" id="mf-keep" style="width:auto;min-height:0" ${existing?'':'checked'}> <span class="small">Save to my foods for next time</span></label><button class="btn primary wide" id="mf-save">${existing?'Save changes':'Add'}</button>${existing?'<button class="btn quiet wide" id="mf-del" style="color:var(--red)">Remove</button>':''}</div>`);
+  const sh=document.getElementById('sheet'); const q=id=>sh.querySelector('#'+id); let photo=e.photo||null; const f=foodState();
+  q('mf-photo').onclick=()=>q('mf-file').click(); q('mf-file').onchange=async ev=>{ const file=ev.target.files[0]; if(!file) return; photo=await shrinkPhoto(file); q('mf-thumb').outerHTML=`<img id="mf-thumb" src="${photo}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover">`; q('mf-photo').textContent='Change photo'; };
+  if(withPhoto) setTimeout(()=>q('mf-file').click(),150);
+  q('mf-save').onclick=()=>{ const name=q('mf-name').value.trim(); if(!name) return toast('Give it a name'); const num=id=>{ const v=q(id).value; return v===''?0:Number(v)||0; }; const kcal=Math.round(num('mf-kcal')); if(!kcal&&!num('mf-p')&&!num('mf-c')&&!num('mf-f')) return toast('Enter at least the calories'); const entry={id:existing?existing.id:uid(),date:existing?existing.date:foodDay(),meal:q('mf-meal').value,name,brand:q('mf-brand').value.trim(),qtyLabel:q('mf-qty').value.trim(),qty:1,unit:'serving',grams:null,kcal,p:round(num('mf-p'),1),c:round(num('mf-c'),1),f:round(num('mf-f'),1),sugar:round(num('mf-s'),1),fiber:round(num('mf-fi'),1),photo,ts:now(),foodId:existing?existing.foodId:null};
+    if(existing){ const i=f.entries.findIndex(x=>x.id===existing.id); f.entries[i]=entry; } else { f.entries.push(entry); if(q('mf-keep').checked){ const cf={id:'cf_'+uid(),name,brand:entry.brand,kcal,p:entry.p,c:entry.c,f:entry.f,sugar:entry.sugar,fiber:entry.fiber,per:100,serving:100,servingLabel:entry.qtyLabel||'1 serving',source:'mine'}; f.custom.push(cf); entry.foodId=cf.id; f.recent=[cf.id].concat(f.recent||[]).slice(0,20); } }
+    if(!saveFood()) return; closeSheet(); S.tab='food'; render(); toast(existing?'Updated':`Added · ${kcal} kcal`); };
+  if(q('mf-del')) q('mf-del').onclick=()=>{ f.entries=f.entries.filter(x=>x.id!==existing.id); save(); closeSheet(); render(); toast('Removed'); }; }
+function editFoodEntry(id){ const f=foodState(); const e=f.entries.find(x=>x.id===id); if(!e) return; const food=e.foodId&&allFoods().find(x=>x.id===e.foodId); if(food&&e.grams) servingSheet(food,e.meal,e); else manualFoodSheet(e.meal,e); }
+/* Open Food Facts (free, community database) — product by barcode, or text search */
+function offParse(p){ const n=p.nutriments||{}; const kcal= n['energy-kcal_100g']!=null? Number(n['energy-kcal_100g']) : n['energy_100g']!=null? Number(n['energy_100g'])/4.184 : null; if(kcal==null) return null; const sv=String(p.serving_size||''); const m=sv.match(/([\d.]+)\s*(g|ml)/i); const serving= m? Number(m[1]) : 100; return {id:'off_'+(p.code||uid()),name:p.product_name||p.product_name_en||'Unnamed product',brand:(p.brands||'').split(',')[0].trim(),kcal:Math.round(kcal),p:Number(n.proteins_100g)||0,c:Number(n.carbohydrates_100g)||0,f:Number(n.fat_100g)||0,sugar:Number(n.sugars_100g)||0,fiber:Number(n.fiber_100g)||0,sodium:n.sodium_100g!=null?Math.round(Number(n.sodium_100g)*1000):null,per:100,serving,servingLabel: m? `1 serving (${sv.trim()})` : '100 g',source:'off',barcode:p.code}; }
+async function offLookup(code){ const r=await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=code,product_name,product_name_en,brands,serving_size,nutriments`); if(!r.ok) throw new Error('Lookup failed ('+r.status+')'); const j=await r.json(); if(j.status!==1||!j.product) throw new Error('Not in the database'); const food=offParse(j.product); if(!food) throw new Error('No nutrition data for this product'); return food; }
+async function offSearch(q){ const r=await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_en,brands,serving_size,nutriments`); if(!r.ok) throw new Error('Search failed ('+r.status+')'); const j=await r.json(); return (j.products||[]).map(offParse).filter(Boolean); }
+function barcodeSheet(meal){ const canScan='BarcodeDetector' in window; let stream=null,timer=null; const stop=()=>{ clearInterval(timer); if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } };
+  openSheet(`<h2>Barcode</h2>${canScan?`<video id="bc-video" playsinline muted style="width:100%;border-radius:12px;background:#000;max-height:260px"></video><p class="tiny muted" style="margin:6px 0 10px">Point the camera at the barcode.</p>`:`<p class="small muted" style="margin-bottom:10px">This browser can't scan with the camera, so type the number printed under the barcode.</p>`}<div class="row"><input id="bc-num" inputmode="numeric" placeholder="Barcode number" class="grow"><button class="btn" id="bc-go">Look up</button></div><div id="bc-status" class="small muted" style="margin-top:8px"></div>`);
+  const sh=document.getElementById('sheet'); const q=id=>sh.querySelector('#'+id); const status=t=>{ if(q('bc-status')) q('bc-status').textContent=t; };
+  const lookup=async code=>{ stop(); status('Looking up '+code+'…'); try{ const food=await offLookup(code); servingSheet(food,meal); }catch(e){ status(e.message+'. Try "Search packaged foods online" or enter it manually.'); } };
+  q('bc-go').onclick=()=>{ const v=q('bc-num').value.replace(/\D/g,''); if(v.length<6) return toast('Enter the full number'); lookup(v); };
+  if(canScan){ (async()=>{ try{ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); const v=q('bc-video'); v.srcObject=stream; await v.play(); const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']}); timer=setInterval(async()=>{ try{ const codes=await det.detect(v); if(codes.length){ lookup(codes[0].rawValue); } }catch(e){} },350); }catch(e){ status('Camera not available — type the number instead.'); } })(); }
+  sh.addEventListener('click',e=>{ if(e.target===sh) stop(); }); const obs=new MutationObserver(()=>{ if(!document.getElementById('bc-video')&&!document.getElementById('bc-num')){ stop(); obs.disconnect(); } }); obs.observe(document.body,{childList:true,subtree:true}); }
+function onlineSearchSheet(meal,initial){ openSheet(`<h2>Packaged foods</h2><p class="tiny muted" style="margin-bottom:8px">Searches Open Food Facts, a free community database of labels. Needs internet.</p><div class="row"><input id="os-q" class="grow" placeholder="Brand or product, e.g. Chobani vanilla" value="${esc(initial||'')}"><button class="btn" id="os-go">Search</button></div><div id="os-status" class="small muted" style="margin:8px 0"></div><ul class="list" id="os-list"></ul>`);
+  const sh=document.getElementById('sheet'); const q=id=>sh.querySelector('#'+id); let results=[];
+  const run=async()=>{ const term=q('os-q').value.trim(); if(!term) return; q('os-status').textContent='Searching…'; q('os-list').innerHTML=''; try{ results=await offSearch(term); q('os-status').textContent=results.length?`${results.length} results · tap one`:'Nothing found — try fewer words'; q('os-list').innerHTML=results.map((x,i)=>`<li data-os="${i}"><div class="grow"><div class="t">${esc(x.name)}</div><div class="s">${esc(x.brand||'')}${x.brand?' · ':''}${x.kcal} kcal /100 g · P ${x.p} · C ${x.c} · F ${x.f}</div></div><span class="muted">›</span></li>`).join(''); }catch(e){ q('os-status').textContent=e.message+' — check your connection.'; } };
+  q('os-go').onclick=run; q('os-q').addEventListener('keydown',e=>{ if(e.key==='Enter') run(); }); if(initial) run();
+  sh.addEventListener('click',e=>{ const li=e.target.closest('[data-os]'); if(li) servingSheet(results[+li.dataset.os],meal); }); }
+function targetsSheet(){ const tg=macroTargets(); const f=foodState(); openSheet(`<h2>Daily targets</h2><p class="small muted" style="margin-bottom:10px">${tg.auto?'These come from your profile and training goal. Change any to set your own.':'Custom. Reset to go back to the profile-based numbers.'}</p><div class="stack"><div class="grid3">${[['kcal','Calories',''],['p','Protein','g'],['c','Carbs','g'],['f','Fat','g'],['sugar','Sugar','g'],['fiber','Fiber','g']].map(([k,l,u])=>`<label class="small">${l}${u?' '+u:''}<input id="tg-${k}" type="number" inputmode="numeric" value="${tg[k]}"></label>`).join('')}</div><button class="btn primary wide" id="tg-save">Save targets</button>${f.targets?'<button class="btn quiet wide" id="tg-reset">Reset to profile-based</button>':''}</div>`);
+  const sh=document.getElementById('sheet'); sh.querySelector('#tg-save').onclick=()=>{ const t={}; ['kcal','p','c','f','sugar','fiber'].forEach(k=>t[k]=Math.max(0,Math.round(Number(sh.querySelector('#tg-'+k).value)||0))); if(!t.kcal) return toast('Calories can\'t be 0'); f.targets=t; save(); closeSheet(); render(); toast('Targets saved'); };
+  const r=sh.querySelector('#tg-reset'); if(r) r.onclick=()=>{ f.targets=null; save(); closeSheet(); render(); }; }
+function foodCardHome(){ const day=todayKey(); const es=dayEntries(day); const c=profileCalories(); if(!es.length&&!c&&!(foodState().entries.length)) return ''; const t=dayTotals(day); const tg=macroTargets(); return `<div class="card"><div class="row between"><div><div class="muted small">Food today</div><h3>${t.kcal.toLocaleString()} / ${tg.kcal.toLocaleString()} kcal</h3><div class="tiny muted">Protein ${t.p} / ${tg.p} g · Carbs ${t.c} g · Fat ${t.f} g · Sugar ${t.sugar} g</div></div><button class="btn primary sm" data-act="food-add">+ Food</button></div></div>`; }
+function nutritionCard(){ const f=foodState(); if(!f.entries.length) return ''; const tg=macroTargets(); const days=[]; for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const k=localDay(d); const t=dayTotals(k); days.push({label:d.toLocaleDateString(undefined,{weekday:'short'}).slice(0,2),kcal:t.kcal,p:t.p,logged:dayEntries(k).length>0}); } const logged=days.filter(x=>x.logged); const avgK=logged.length?Math.round(logged.reduce((a,x)=>a+x.kcal,0)/logged.length):0; const avgP=logged.length?Math.round(logged.reduce((a,x)=>a+x.p,0)/logged.length):0; return `<div class="card"><div class="row between" style="margin-bottom:6px"><h2>Nutrition</h2><span class="pill ${avgK>tg.kcal*1.1?'red':'blue'}">avg ${avgK.toLocaleString()} kcal · ${avgP} g protein</span></div>${barChart(days.map(x=>x.kcal),days.map(x=>x.label))}<p class="tiny muted">Calories per day, last 7 days (days with food logged). Target ${tg.kcal.toLocaleString()}.</p></div>`; }
+
 /* ---------- Rendering ---------- */
 const app=document.getElementById('app');
-function render(){ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===S.tab)); const v={home:viewHome,train:viewTrain,plans:viewPlans,progress:viewProgress,more:viewMore}[S.tab]||viewHome; app.innerHTML=v(); window.scrollTo(0,0); }
+let tickTimer=null;
+function startTick(){ clearInterval(tickTimer); tickTimer=setInterval(()=>{ if(!S.active||S.tab!=='train') return; const sub=document.querySelector('.topbar .sub'); if(sub) sub.textContent=`${fmtDur(now()-S.active.start)} · ${workingSets(S.active).length} sets · ${fmtK(workoutVolume(S.active))} ${S.units}`; },30000); }
+function render(){ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===S.tab)); const v={home:viewHome,train:viewTrain,plans:viewPlans,food:viewFood,progress:viewProgress,more:viewMore}[S.tab]||viewHome; app.innerHTML=v(); window.scrollTo(0,0); }
 function header(title,sub){ return `<div class="topbar"><h1>${title}</h1>${sub?`<div class="sub">${sub}</div>`:''}</div>`; }
 
 function viewHome(){ const fr=freshness(); const wk=S.workouts.filter(w=>w.end&&w.end>now()-7*864e5); const vol=wk.reduce((a,w)=>a+workoutVolume(w),0); const streak=weekStreak(); const sugg=MUSCLES.slice().sort((a,b)=>fr[b]-fr[a]).slice(0,3).map(m=>MUSCLE_LABEL[m]);
@@ -549,6 +841,7 @@ function viewHome(){ const fr=freshness(); const wk=S.workouts.filter(w=>w.end&&
     <select id="gen-min" style="width:110px"><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option><option value="75">75 min</option></select></div>
     <button class="btn primary wide" data-act="generate">Generate a workout</button>
     <div class="grid2"><button class="btn quiet" data-act="start-empty">Empty workout</button><button class="btn quiet" data-act="tab" data-tab="plans">Pick a routine</button></div></div></div>
+  ${foodCardHome()}
   ${stepsCard()}
   <div class="grid3"><div class="stat"><div class="lbl">This week</div><div class="num">${wk.length}</div><div class="tiny muted">${(()=>{const k=wk.reduce((a,w)=>a+(kcalOf(w)||0),0); return k?'≈'+k.toLocaleString()+' kcal':'workouts';})()}</div></div><div class="stat"><div class="lbl">Volume</div><div class="num">${fmtK(vol)}</div><div class="tiny muted">${S.units} lifted</div></div><div class="stat"><div class="lbl">Streak</div><div class="num">${streak}</div><div class="tiny muted">weeks</div></div></div>
   ${recentWorkouts(3)}`; }
@@ -558,7 +851,7 @@ function todayCard(){ if(!S.plan) return ''; const d=todaysPlan(); const doneTod
 function fmtK(n){ return n>=10000? Math.round(n/1000)+'k' : Math.round(n).toLocaleString(); }
 function weekStreak(){ const weeks=new Set(S.workouts.filter(w=>w.end).map(w=>weekKey(w.end))); let n=0; let d=new Date(); while(weeks.has(weekKey(d.getTime()))){ n++; d.setDate(d.getDate()-7); } return n; }
 function weekKey(t){ const d=new Date(t); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
-function recentWorkouts(n){ const ws=S.workouts.filter(w=>w.end).sort((a,b)=>b.end-a.end).slice(0,n); if(!ws.length) return `<div class="card"><h3>No workouts yet</h3><p class="muted small">Your history shows up here once you finish a session.</p></div>`;
+function recentWorkouts(n){ const ws=S.workouts.filter(w=>w.end).sort((a,b)=>b.end-a.end).slice(0,n); if(!ws.length) return `<div class="card"><h3 style="margin-bottom:6px">Getting started</h3><ol class="small" style="padding-left:18px;margin:0"><li style="margin-bottom:4px"><strong>More → Profile</strong>: weight, height, sex — this powers your strength score and calorie estimates.</li><li style="margin-bottom:4px"><strong>Plans → Build my plan</strong>, or just tap <strong>Generate a workout</strong> above.</li><li>Log your sets as you go. Tick each one and the rest timer starts.</li></ol></div>`;
   return `<div class="card flush"><ul class="list">${ws.map(w=>`<li data-act="open-workout" data-id="${w.id}"><div class="grow"><div class="t">${esc(w.name)}</div><div class="s">${fmtDateY(w.end)} · ${w.cardio? cardioSummary(w) : fmtDur(w.end-w.start)+(w.circuit?(w.imported?' · '+(w.source||'Apple Health'):' · circuit'):' · '+workingSets(w).length+' sets · '+fmtK(workoutVolume(w))+' '+S.units)}${kcalOf(w)?' · ≈'+kcalOf(w)+' kcal':''}</div></div><span class="muted">›</span></li>`).join('')}</ul></div>`; }
 
 function viewTrain(){ const w=S.active; if(!w) return header('Train')+`<div class="card"><h3>Nothing in progress</h3><p class="muted small" style="margin:6px 0 12px">Start from a routine, generate one from your recovery map, or go freestyle.</p><div class="stack"><button class="btn primary wide" data-act="tab" data-tab="home">Generate from recovery</button><button class="btn quiet wide" data-act="tab" data-tab="plans">Choose a routine</button><button class="btn quiet wide" data-act="start-empty">Empty workout</button></div></div>`+recentWorkouts(5);
@@ -655,6 +948,7 @@ function viewProgress(){ const ws=S.workouts.filter(w=>w.end); const weeks=weekl
   <div class="card"><h2 style="margin-bottom:6px">Weekly volume</h2>${barChart(weeks.map(w=>w.vol),weeks.map(w=>w.label))}<p class="tiny muted">Weight × reps of completed working sets, last 10 weeks.</p></div>
   ${cardioCard()}
   ${kcalCard()}
+  ${nutritionCard()}
   ${stepsCard()}
   <div class="card"><div class="row between" style="margin-bottom:6px"><h2>Exercise trend</h2>${exIds.length?`<select id="chart-ex" style="width:auto;min-height:36px;padding:4px 8px">${exIds.map(id=>`<option value="${id}" ${id===selEx?'selected':''}>${esc(exById(id).name)}</option>`).join('')}</select>`:''}</div>
    ${selEx? exerciseChart(selEx) : '<p class="muted small">Finish a workout to see trends.</p>'}</div>
@@ -692,8 +986,8 @@ function viewMore(){ return header('More')+
    <div><div class="small" style="margin-bottom:6px">Equipment I have (used by the generator)</div><div class="chips">${EQUIPMENT.map(q=>`<button class="chip ${S.equipment.includes(q)?'on':''}" data-act="eq" data-eq="${q}">${q}</button>`).join('')}</div></div>
   </div></div>
   <div class="card"><h2 style="margin-bottom:6px">Backup</h2><p class="small muted" style="margin-bottom:10px">Everything is stored in this browser only. Export regularly; import on a new phone to restore.</p>
-   <div class="grid2"><button class="btn" data-act="export-json">Export backup</button><button class="btn quiet" data-act="import-json">Import backup</button><button class="btn quiet" data-act="export-csv">Export CSV</button><button class="btn quiet" data-act="wipe" style="color:var(--red)">Erase all data</button></div><input type="file" id="import-file" accept="application/json" class="hidden"></div>
-  <p class="tiny muted" style="text-align:center">Ironlog · ${S.workouts.filter(w=>w.end).length} workouts logged</p>`; }
+   <div class="grid2"><button class="btn" data-act="export-json">Export backup</button><button class="btn quiet" data-act="import-json">Import backup</button><button class="btn quiet" data-act="export-csv">Export workouts CSV</button><button class="btn quiet" data-act="export-food-csv">Export food CSV</button><button class="btn quiet" data-act="wipe" style="color:var(--red)">Erase all data</button></div><input type="file" id="import-file" accept="application/json" class="hidden"></div>
+  <p class="tiny muted" style="text-align:center">Ironlog v${APP_VERSION} · ${S.workouts.filter(w=>w.end).length} workouts logged${STANDALONE?' · Home Screen app':''}</p>`; }
 
 function profileCard(){ const p=S.profile||{}; const cal=profileCalories(); const hUnit= S.units==='kg'?'cm':'in';
   return `<div class="card"><h2 style="margin-bottom:4px">Profile</h2><p class="small muted" style="margin-bottom:10px">Adjusts the strength-score standards and estimates your daily calories. Stays on this device.</p><div class="stack">
@@ -737,6 +1031,7 @@ function exerciseMenu(i){ const ex=S.active.exercises[i]; openSheet(`<h2>${esc(e
 
 /* ---------- Export / import ---------- */
 function download(name,text,type='application/json'){ const b=new Blob([text],{type}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1000); }
+function exportFoodCSV(){ const rows=[['date','meal','food','brand','amount','kcal','protein_g','carbs_g','fat_g','sugar_g','fiber_g']]; [...foodState().entries].sort((a,b)=>a.date<b.date?-1:1).forEach(e=>rows.push([e.date,e.meal,e.name,e.brand||'',e.qtyLabel||'',e.kcal,e.p,e.c,e.f,e.sugar,e.fiber])); download('ironlog-food-'+new Date().toISOString().slice(0,10)+'.csv',rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv'); }
 function exportCSV(){ const rows=[['date','workout','exercise','set','type','weight','reps','rpe']]; S.workouts.filter(w=>w.end).forEach(w=>w.exercises.forEach(ex=>ex.sets.forEach((s,i)=>rows.push([new Date(w.end).toISOString(),w.name,exById(ex.exId).name,i+1,s.type,s.w??'',s.r??'',s.rpe??''])))); download('ironlog-'+new Date().toISOString().slice(0,10)+'.csv',rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv'); }
 
 /* ---------- Events ---------- */
@@ -764,7 +1059,7 @@ document.body.addEventListener('click',e=>{ const el=e.target.closest('[data-act
     case 'ex-menu': exerciseMenu(+el.dataset.ex); break;
     case 'finish': finishWorkout(); break;
     case 'discard': if(confirm('Discard this workout?')){ S.active=null; stopRest(); save(); render(); } break;
-    case 'rest-add': rest.end+=30000; rest.total+=30; tickRest(); break;
+    case 'rest-add': rest.end+=30000; rest.total+=30; S._rest={end:rest.end,total:rest.total}; save(); tickRest(); break;
     case 'rest-skip': stopRest(); break;
     case 'open-workout': showWorkout(el.dataset.id); break;
     case 'body-add': bodyForm(); break;
@@ -774,9 +1069,14 @@ document.body.addEventListener('click',e=>{ const el=e.target.closest('[data-act
     case 'calc-warmup': warmupCalc(); break;
     case 'calc-1rm': ormCalc(); break;
     case 'health-import': healthSheet(); break;
+    case 'food-add': foodSearchSheet(el.dataset.meal||null); break;
+    case 'food-edit': editFoodEntry(el.dataset.id); break;
+    case 'food-day': { const f=foodState(); const d=new Date(foodDay()+'T12:00:00'); d.setDate(d.getDate()+Number(el.dataset.d)); const k=localDay(d); f.day= k>=todayKey()? null : k; save(); render(); break; }
+    case 'food-targets': targetsSheet(); break;
     case 'eq': { const q=el.dataset.eq; S.equipment=S.equipment.includes(q)? S.equipment.filter(x=>x!==q) : S.equipment.concat(q); save(); el.classList.toggle('on'); break; }
-    case 'export-json': download('ironlog-backup-'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(S,null,1)); toast('Backup downloaded'); break;
+    case 'export-json': { const o=Object.assign({},S); delete o._rest; delete o._pendingImport; delete o._chartEx; o.exportedFrom='Ironlog v'+APP_VERSION; download('ironlog-backup-'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(o,null,1)); toast('Backup downloaded'); break; }
     case 'export-csv': exportCSV(); break;
+    case 'export-food-csv': exportFoodCSV(); break;
     case 'import-json': document.getElementById('import-file').click(); break;
     case 'wipe': if(confirm('Erase ALL workouts, routines and settings on this device?')&&confirm('Really erase everything? Export a backup first if unsure.')){ localStorage.removeItem(KEY); S=load(); render(); toast('Erased'); } break;
   } });
@@ -797,7 +1097,7 @@ document.body.addEventListener('change',e=>{ const t=e.target;
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
 function applyTheme(){ document.documentElement.dataset.theme= S.theme==='auto'?'':S.theme; }
-applyTheme(); render(); handleImportParam(); checkBirthdayUnlock(); setTimeout(maybeAskHealth,600);
+if(S.food) S.food.day=null; applyTheme(); render(); startTick(); resumeRest(); handleImportParam(); checkBirthdayUnlock(); setTimeout(maybeAskHealth,600);
 if(S.active) { /* resume rest display only if a timer was live is not persisted; fine */ }
 </script>
 </body>
