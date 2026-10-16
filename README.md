@@ -35,9 +35,9 @@ A personal strength and fitness tracker that runs entirely in your browser. No a
 **Health app connection (18+)**
 - On first open the app asks for your date of birth. The health connection is only offered to adults; it unlocks automatically on an under-18 user's 18th birthday.
 - Then it asks "Connect to Health?" with a choice of **iPhone (Apple Health)** or **Android (Samsung Health)**. "Not now" is remembered; it can be turned on, switched or disconnected any time under **More → Health**.
-- iPhone: a "Sync to Ironlog" shortcut sends steps and Apple Watch workouts (type, duration, distance, calories, heart rate) to the app. An illustrated 20-step, one-tap-at-a-time guide inside the app walks you through building it once; it can then be shared as a one-tap install link. Can run automatically every morning via Shortcuts → Automation.
+- iPhone: tap **Get the shortcut** to install the shared "Sync to Ironlog" shortcut (one tap). Running it copies your last 7 days of daily step totals to the clipboard; **Paste from clipboard** (on Home or under More → Health) brings them in. Apple does not let shortcuts read workouts, so log cardio in Ironlog itself (it computes the calories). An illustrated 14-step guide in the app shows how to build the shortcut by hand if you'd rather. Can run automatically every morning via Shortcuts → Automation.
 - Android: Samsung Health → Settings → Download personal data; pick the emailed zip (or a CSV from it) in the app. Steps, Galaxy Watch workouts, calories and heart rate come in. The zip is unpacked on the phone; nothing is uploaded anywhere.
-- Re-running a sync skips anything already imported. A "Paste from clipboard" option covers Home Screen users and automation tools.
+- Re-running a sync skips anything already imported. Ironlog also accepts data appended to its address as `?import=` (URL-encoded text), which opens in Safari.
 
 **Everything else**
 - Dark mode, lb/kg (mi/km) labels, backup export/import (JSON), CSV export. All data stays on the device.
@@ -49,7 +49,7 @@ A personal strength and fitness tracker that runs entirely in your browser. No a
 | `index.html` | The whole app (HTML + CSS + JS in one file) |
 | `manifest.json` | Lets Android/Chrome install it as an app |
 | `icon.png`, `icon-192.png` | Home-screen icons |
-| `SHORTCUT.md` | Text version of the iPhone shortcut build guide (the app has the illustrated one) |
+| `SHORTCUT.md` | What the iPhone shortcut does and how to rebuild it (the app has the illustrated guide) |
 
 ## Host your own copy on GitHub Pages (free)
 
@@ -62,11 +62,11 @@ To update, upload a new `index.html` the same way.
 
 ## Put it on a phone home screen
 
-- **iPhone:** open the site in Safari → Share → **Add to Home Screen**. Note: iPhone keeps the Home Screen icon's data separate from Safari's, so pick one place to use Ironlog. If you use the icon, end the shortcut with *Copy to Clipboard* and use *Paste from clipboard* under More → Health.
+- **iPhone:** open the site in Safari → Share → **Add to Home Screen**. Note: iPhone keeps the Home Screen icon's data separate from Safari's, so pick one place to use Ironlog. The health sync works the same in both (shortcut → paste).
 - **Android:** open the site in Chrome → menu → **Add to Home screen** / **Install app**.
 
 Export a backup (More → Backup) now and then; import it on a new phone to restore.
 
 ## Versions
 
-Each release is saved in `backups/` on the maintainer's machine. Current: **v12**.
+Each release is saved in `backups/` on the maintainer's machine. Current: **v13**.

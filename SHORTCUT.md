@@ -1,90 +1,51 @@
 # "Sync to Ironlog" — iPhone Shortcut
 
-Pulls the last 7 days of steps and workouts (Apple Watch included) out of the Health app and sends them to Ironlog. One tap, or automatic every morning. Nothing leaves your phone except the data going to your own site.
+Pulls the last 7 days of daily step totals out of the Health app and copies them to the clipboard in the format Ironlog reads. Then, in Ironlog, tap **Paste from clipboard** (on the Steps card on Home, or under More → Health). Nothing leaves your phone.
 
-Takes about 10 minutes to build. Build it on the iPhone in the **Shortcuts** app.
+**Install in one tap:** https://www.icloud.com/shortcuts/114435bc94dc4fe2a01be32637ac401c (this is the link behind the app's "Get the shortcut" button). Tap it on the iPhone → **Add Shortcut**.
 
-## The idea
+## Why steps only
 
-1. Ask Health for the last 7 days of **Steps** (one total per day) and the last 7 days of **Workouts**.
-2. Turn each into a few lines of text in the format Ironlog reads.
-3. Open `https://joeyp031304.github.io/BuffaloJoe-s-Workout-Partner/?import=` + that text.
+Apple's Shortcuts app has no action that reads workouts from Health — the only workout actions are Start Workout, End Workout and Log Workout, and "Workouts" is not a Health Sample type. So the shortcut syncs steps, and cardio/strength sessions are logged in Ironlog itself, which computes their calories.
 
-Ironlog reads the text, saves it, and shows "Imported N workouts, N days of steps." Anything already imported is skipped, so running it twice is harmless.
+## Why the clipboard
 
-## Build it
+A shortcut can only open a web address in Safari, and iPhone keeps a Home Screen web app's data separate from Safari's. Copying to the clipboard works for both: run the shortcut, open Ironlog wherever you use it, tap Paste. (Ironlog also understands `?import=` + URL-encoded text on its address, which is what opens in Safari.)
 
-Open **Shortcuts** → **+** (top right) → tap the name at the top and call it **Sync to Ironlog**. Then add these actions in order (use the search bar at the bottom to find each one).
+## What the shortcut contains (to rebuild it by hand)
 
-### Part 1 — Steps
+The app has an illustrated version of this under More → Health → "Prefer to build it yourself?".
 
-1. **Find Health Samples**
-   - Type: **Steps**
-   - Add a filter: **Start Date** → **is in the last** → **7 days**
-   - Tap **Show More** → set **Group By** to **Day** (so you get one total per day, not thousands of tiny samples)
-2. **Repeat with Each** (it will pick up the Health Samples automatically). Inside the repeat, add:
-   - **Get Details of Health Samples** → Get **Start Date** of *Repeat Item*
-   - **Format Date** → Date = that Start Date, Format: **Custom**, string `yyyy-MM-dd`
-   - **Get Details of Health Samples** → Get **Value** of *Repeat Item*
-   - **Text** containing exactly (use the magic variables, one per line):
+1. **Find Health Samples** — Type **Steps**, filter **Start Date is in the last 7 days**, Show More → **Group By: Day**.
+2. **Repeat with Each** (Health Samples). Inside the loop:
+   - **Get Details of Health Samples** → **Start Date** of Repeat Item
+   - **Format Date** → Custom → `yyyy-MM-dd`
+   - **Get Details of Health Samples** → **Value** of Repeat Item
+   - **Text**:
      ```
      date: [Formatted Date]
      steps: [Value]
 
      ```
-     (End with one empty line.)
-3. After **End Repeat**: add **Combine Text** → combine *Repeat Results* with **New Lines**. Rename this result "StepsText" (tap it → Rename) so it's easy to find later.
+     (one empty line at the end)
+3. After **End Repeat**: **Combine Text** → Repeat Results with **New Lines**; **Set Variable** → `StepsText` = Combined Text.
+4. **Copy to Clipboard** → StepsText.
 
-### Part 2 — Workouts
+Tip: if a new action lands below End Repeat instead of inside the loop, press-and-hold it and drag it up between Repeat and End Repeat.
 
-4. **Find Health Samples**
-   - Type: **Workouts**
-   - Filter: **Start Date** → **is in the last** → **7 days**
-5. **Repeat with Each**. Inside:
-   - **Get Details of Health Samples** → **Workout Type** of *Repeat Item*
-   - **Get Details of Health Samples** → **Start Date**; then **Format Date** → Custom `yyyy-MM-dd'T'HH:mm:ss`
-   - **Get Details of Health Samples** → **Duration** (comes back in minutes)
-   - **Get Details of Health Samples** → **Distance** (in your Health units; Ironlog takes it as miles or km to match your Ironlog setting)
-   - **Get Details of Health Samples** → **Active Energy** (calories)
-   - **Get Details of Health Samples** → **Average Heart Rate** (may be empty for workouts without a watch; that's fine)
-   - **Text**:
-     ```
-     type: [Workout Type]
-     start: [Formatted Date]
-     minutes: [Duration]
-     distance: [Distance]
-     kcal: [Active Energy]
-     hr: [Average Heart Rate]
-
-     ```
-6. After **End Repeat**: **Combine Text** → *Repeat Results* with **New Lines**. Rename it "WorkoutsText".
-
-### Part 3 — Send it
-
-7. **Text** containing:
-   ```
-   [StepsText]
-
-   [WorkoutsText]
-   ```
-8. **URL Encode** → Encode that Text.
-9. **URL** → `https://joeyp031304.github.io/BuffaloJoe-s-Workout-Partner/?import=` followed immediately by the *URL Encoded Text* variable (no space).
-10. **Open URLs** → that URL.
-
-Tap **Done**. Run it once from the Shortcuts app: iOS will ask to allow Health access for Steps and Workouts (allow both) and may ask to allow opening the website. Ironlog opens, shows the import toast, and your Steps card appears on Home.
-
-## Share it so the app's "Get the shortcut" button works
-
-Once it runs correctly: open the shortcut's menu (⋯ on its tile) → **Share** → **Copy iCloud Link**. Paste that link into Ironlog under More → Apple Health (the "Save link for this device" box), or better, give it to Claude to bake into the site so every new visitor's Yes button installs it in one tap.
+Run it once: Allow **Steps** when iOS asks. Nothing shows on screen; the text is on the clipboard. Open Ironlog → Paste from clipboard → Allow Paste.
 
 ## Make it automatic
 
-Shortcuts → **Automation** tab → **+** → **Time of Day** → pick e.g. 7:00 AM, Daily → **Run Immediately** → choose **Sync to Ironlog**. It'll open Ironlog each morning with yesterday's data pulled in.
+Shortcuts → **Automation** → **+** → **Time of Day** → e.g. 7:00 AM, Daily → **Run Immediately** → **Sync to Ironlog**. Each morning the fresh steps are on the clipboard; paste when you open Ironlog.
 
 ## If something's off
 
-- **"Import link had no readable Health data"** → the Text in step 7 is empty or the labels are misspelled. Labels must be exactly `date`, `steps`, `type`, `start`, `minutes`, `distance`, `kcal`, `hr`, each followed by a colon.
-- **Workouts show but steps don't** → Group By in step 1 isn't set to Day, so Value is a tiny sample instead of a daily total.
-- **Running shows as "Cardio"** → fine; Ironlog maps Running/Walking/Hiking/Cycling/Swimming/Rowing/Stair/Elliptical by name, anything else becomes generic cardio (or a strength session if the type says Strength/HIIT/Core).
-- **Distance looks wrong** → Health reports distance in the unit set in the Health app. If Ironlog is in miles, set Health to miles too (Health → Profile → Units).
-- **Want to test without Health** → More → Apple Health import → paste the example text there and tap Import.
+- **"Clipboard doesn't contain Health data from the shortcut"** → run the shortcut first, or something copied over it since. Run it again, then paste.
+- **"Already up to date — nothing new"** → the same days were already imported (normal if you paste twice).
+- **Step counts look tiny** → Group By in step 1 isn't set to Day, so Value is a single sample instead of a daily total.
+- **Test without Health** → More → Health → Advanced → paste the example text there and tap Import.
+
+## Share a modified shortcut
+
+Long-press its tile → **Share** → **Copy iCloud Link**. Paste into Ironlog under More → Health ("Already have an iCloud shortcut link?") or send it to the maintainer to replace the built-in link.
